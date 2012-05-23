@@ -16,8 +16,8 @@ namespace checker
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				var files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
-				var dumpSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml"));
-				var dirs = args.Where(a => a == "." || a.EndsWith(@"\") || a.IndexOf('\\') > a.IndexOf('.'));
+				var xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
+				var dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
 
 				foreach (var dir in dirs)
 				{
@@ -34,20 +34,35 @@ namespace checker
 				//TODO: try-catch inside needed
 				var assemblies = MakeDumps(files);
 
-				if(args[0].ToLowerInvariant() == "-dump")
+				if (args[0].ToLowerInvariant() == "-dump")
 				{
-					assemblies.ProperSave(dumpSrc ?? "report.xml");
+					assemblies.ProperSave(xmlSrc);
 					return 0;
 				}
 
 				if (args[0].ToLowerInvariant() == "-check")
 				{
+					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("save:"));
+
+					XElement storedAssemblies = XElement.Load(xmlSrc);
+					CheckAssemblies(storedAssemblies, assemblies);
 					
-					//TODO: Return error!
-					return 0;
+					//TODO: Add patching functionality
+					//TODO: Verbose error output
+
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile)?("results-"+xmlSrc):resultsFile.Substring(5));
+
+					if(storedAssemblies.Descendants().Any(d=>d.Attribute("Compatible")!=null && d.Attribute("Compatible").Value=="false"))
+					{
+						return 1;
+					}
+					else
+					{
+						return 0;
+					}
 				}
 			}
-			
+
 			Usage();
 			return -1;
 		}
@@ -63,7 +78,7 @@ namespace checker
 				fileList.Select(
 					file => AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic));
 
-			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly.FullName : ""));
+			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly : null));
 
 			XElement theDump = new XElement("TheDump");
 			foreach (var assembly in assembliesXmlNodes)
@@ -75,12 +90,13 @@ namespace checker
 			return theDump;
 		}
 
-		private static XElement MakeTypeXmlProto(IEnumerable<TypeDefinition> source, string assemblyName = null)
+		private static XElement MakeTypeXmlProto(IEnumerable<TypeDefinition> source, AssemblyDefinition asmInfo = null)
 		{
 			var rootXml = new XElement("Assembly");
-			if (assemblyName != null)
+			if (asmInfo != null)
 			{
-				rootXml.SetAttributeValue("Info", assemblyName);
+				rootXml.SetAttributeValue("Name", asmInfo.Name.Name);
+				rootXml.SetAttributeValue("Info", asmInfo.FullName);
 			}
 
 			foreach (var typeDefinition in source)
@@ -93,7 +109,6 @@ namespace checker
 
 		private static XElement MakeTypeXmlNode(TypeDefinition type)
 		{
-			//TODO: check existance
 			XElement newElement = new XElement("Type");
 			newElement.SetAttributeValue("Name", type.CorrectName());
 			if (!type.IsNested)
@@ -146,24 +161,30 @@ namespace checker
 			return newElement;
 		}
 
-		private static bool CheckAssemblies(XElement first, XElement second)
+		private static void CheckAssemblies(XElement first, XElement second)
 		{
 			var asms1 = first.Elements("Assembly");
-			var asms2 = first.Elements("Assembly");
+			var asms2 = second.Elements("Assembly");
 
 			foreach (var assembly in asms1)
 			{
+				var analogInSecond = asms2.FirstOrDefault(a => BasiclyCompatible(assembly, a));
 				
-			}
+				if (analogInSecond == null)
+				{
+					assembly.SetAttributeValue("Compatible", "false");
+					continue;
+				}
 
-			return true;
+				CheckTypeMembers(assembly.Elements("Type"),analogInSecond.Elements("Type"));
+			}
 		}
 
 		private static void CheckTypeMembers(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
 			foreach (var type in first)
 			{
-				var analogInSecond = second.FirstOrDefault(m => BasiclyCompatible(type, m));
+				var analogInSecond = second.FirstOrDefault(t => BasiclyCompatible(type, t));
 
 				if (analogInSecond == null)
 				{
@@ -197,7 +218,6 @@ namespace checker
 
 		private static bool BasiclyCompatible(XElement first, XElement second)
 		{
-			//TODO: special compatibility check for every entity type
 			return first.Attribute("Name").Value == second.Attribute("Name").Value;
 		}
 
@@ -229,11 +249,19 @@ namespace checker
 			if (!BasiclyCompatible(first, second))
 				return false;
 
-			//check types
-			if (first.Attribute("Type").Value != second.Attribute("Type").Value)
-			{
-				return false;
-			}
+			//check field type
+			if (first.Attribute("Type") != null && second.Attribute("Type") != null)
+				if (first.Attribute("Type").Value != second.Attribute("Type").Value)
+				{
+					return false;
+				}
+
+			//check enum fields
+			if (first.Attribute("Value") != null && second.Attribute("Value") != null)
+				if (first.Attribute("Value").Value != second.Attribute("Value").Value)
+				{
+					return false;
+				}
 
 			return true;
 		}
