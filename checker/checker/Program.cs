@@ -5,11 +5,16 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using Mono.Cecil;
+using Mono.Collections.Generic;
 
 namespace checker
 {
 	static class Program
 	{
+		//for debug
+		private static int i = 0;
+		private static int total;
+
 		static int Main(string[] args)
 		{
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
@@ -21,8 +26,8 @@ namespace checker
 				foreach (var dir in dirs)
 				{
 					bool recursive = dir.ToLowerInvariant().StartsWith("-r");
-					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.dll"));
-					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.exe"));
+					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.dll", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
+					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.exe", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
 				}
 
 				if (files.Count() <= 0)
@@ -46,14 +51,14 @@ namespace checker
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
 					CheckAssemblies(storedAssemblies, assemblies);
-					
+
 					//TODO: Add patching functionality
 					//TODO: Verbose error output
 
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile)?("results-"+xmlSrc):resultsFile.Substring("fullreport:".Length));
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
 
 					var report = GenerateReport(storedAssemblies);
-					if(report.HasElements)
+					if (report.HasElements)
 					{
 						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
 						return 1;
@@ -79,10 +84,10 @@ namespace checker
 
 		private static XElement MakeDumps(IEnumerable<string> fileList)
 		{
-			var typesArrays =
-				fileList.Select(
-					file => AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic));
+			total = fileList.Count();
+			i = 0;
 
+			var typesArrays = fileList.Select(file => ReadAssemblyTypes(file)).Where(it=>it!=null);
 			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly : null));
 
 			XElement theDump = new XElement("TheDump");
@@ -93,6 +98,21 @@ namespace checker
 			}
 
 			return theDump;
+		}
+
+		private static IEnumerable<TypeDefinition> ReadAssemblyTypes(string file)
+		{
+			Console.WriteLine(++i + " / " +total);
+
+			try
+			{
+				return AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
+			} 
+			catch(Exception)
+			{
+				//we don't care about broken or empty files
+				return null;
+			}
 		}
 
 		private static XElement MakeTypeXmlProto(IEnumerable<TypeDefinition> source, AssemblyDefinition asmInfo = null)
@@ -175,17 +195,22 @@ namespace checker
 			var asms1 = first.Elements("Assembly");
 			var asms2 = second.Elements("Assembly");
 
+			total = asms1.Count();
+			i = 0;
+
 			foreach (var assembly in asms1)
 			{
+				Console.WriteLine(++i + " / " + total);
+
 				var analogInSecond = asms2.FirstOrDefault(a => BasiclyCompatible(assembly, a));
-				
+
 				if (analogInSecond == null)
 				{
 					assembly.SetAttributeValue("Compatible", "false");
 					continue;
 				}
 
-				CheckTypeMembers(assembly.Elements("Type"),analogInSecond.Elements("Type"));
+				CheckTypeMembers(assembly.Elements("Type"), analogInSecond.Elements("Type"));
 			}
 		}
 
@@ -279,7 +304,7 @@ namespace checker
 
 		#endregion
 
-		#region Reports
+		#region Report
 
 		private static XElement GenerateReport(XElement source)
 		{
