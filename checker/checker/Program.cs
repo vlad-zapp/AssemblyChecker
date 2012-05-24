@@ -5,7 +5,6 @@ using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
 using Mono.Cecil;
-using Mono.Collections.Generic;
 
 namespace checker
 {
@@ -269,8 +268,8 @@ namespace checker
 			//check parameters
 			if (first.Element("Parameters") != null && second.Element("Parameters") != null)
 			{
-				var params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type")).ToArray();
-				var params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type")).ToArray();
+				var params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
+				var params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
 
 				return Enumerable.SequenceEqual(params1, params2);
 			}
