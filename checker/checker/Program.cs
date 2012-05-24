@@ -42,7 +42,8 @@ namespace checker
 
 				if (args[0].ToLowerInvariant() == "-check")
 				{
-					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("save:"));
+					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("fullreport:"));
+					string reportFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("report:"));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
 					CheckAssemblies(storedAssemblies, assemblies);
@@ -50,10 +51,12 @@ namespace checker
 					//TODO: Add patching functionality
 					//TODO: Verbose error output
 
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile)?("results-"+xmlSrc):resultsFile.Substring(5));
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile)?("results-"+xmlSrc):resultsFile.Substring("fullreport:".Length));
 
-					if(storedAssemblies.Descendants().Any(d=>d.Attribute("Compatible")!=null && d.Attribute("Compatible").Value=="false"))
+					var report = GenerateReport(storedAssemblies);
+					if(report.HasElements)
 					{
+						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
 						return 1;
 					}
 					else
@@ -70,7 +73,10 @@ namespace checker
 		private static void Usage()
 		{
 			Console.WriteLine("You dont know how to use it!");
+			Console.ReadKey();
 		}
+
+		#region Dump
 
 		private static XElement MakeDumps(IEnumerable<string> fileList)
 		{
@@ -160,6 +166,10 @@ namespace checker
 			}
 			return newElement;
 		}
+
+		#endregion
+
+		#region Check
 
 		private static void CheckAssemblies(XElement first, XElement second)
 		{
@@ -264,6 +274,40 @@ namespace checker
 				}
 
 			return true;
+		}
+
+		#endregion
+
+		#endregion
+
+		#region Reports
+
+		private static XElement GenerateReport(XElement source)
+		{
+			var LogNodes =
+				source.Descendants().Where(d => d.Attribute("Compatible") != null && d.Attribute("Compatible").Value == "false")
+				.Select(node => MakeLogRecord(node));
+
+			XElement report = new XElement("Report", LogNodes);
+			return report;
+		}
+
+		private static XElement MakeLogRecord(XElement node)
+		{
+			if (node.Attribute("Path") == null)
+				ResolvePath(node);
+
+			node.RemoveNodes();
+			return node;
+		}
+
+		private static XElement ResolvePath(XElement node)
+		{
+			if (node.Attribute("Path") != null)
+				return node;
+			var parent = ResolvePath(node.Parent);
+			node.SetAttributeValue("Path", String.Format("{0}.{1}", parent.Attribute("Path").Value, parent.Attribute("Name").Value));
+			return node;
 		}
 
 		#endregion
