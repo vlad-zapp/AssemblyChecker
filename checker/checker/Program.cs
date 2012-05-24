@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using Mono.Cecil;
@@ -54,12 +55,20 @@ namespace checker
 					//TODO: Add patching functionality
 					//TODO: Verbose error output
 
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
-
 					var report = GenerateReport(storedAssemblies);
 					if (report.HasElements)
 					{
+						storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
 						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
+						
+						Console.WriteLine("Compatibility test failed!");
+						Console.WriteLine("Problems are:");
+
+						foreach (var problem in report.Elements())
+						{
+							Console.WriteLine(problem.Name + "\t" + problem.Element("Path") + "." + problem.Name);
+						}
+						
 						return 1;
 					}
 					else
@@ -326,8 +335,12 @@ namespace checker
 
 		private static XElement ResolvePath(XElement node)
 		{
+			if (node.Name == "Assembly")
+				node.SetAttributeValue("Path","");
+
 			if (node.Attribute("Path") != null)
 				return node;
+			
 			var parent = ResolvePath(node.Parent);
 			node.SetAttributeValue("Path", String.Format("{0}.{1}", parent.Attribute("Path").Value, parent.Attribute("Name").Value));
 			return node;
@@ -353,8 +366,9 @@ namespace checker
 		static void ProperSave(this XElement source, string filename)
 		{
 			using (XmlWriter writer = XmlWriter.Create(
-					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t" }))
+					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t"}))
 			{
+				//writer.WriteRaw(source.ToString());
 				source.Save(writer);
 			}
 		}
