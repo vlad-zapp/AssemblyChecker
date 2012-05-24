@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using Mono.Cecil;
@@ -17,6 +16,7 @@ namespace checker
 
 		static int Main(string[] args)
 		{
+
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				var files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
@@ -55,10 +55,10 @@ namespace checker
 					//TODO: Add patching functionality
 					//TODO: Verbose error output
 
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
 					var report = GenerateReport(storedAssemblies);
 					if (report.HasElements)
 					{
-						storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
 						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
 						
 						Console.WriteLine("Compatibility test failed!");
@@ -68,7 +68,6 @@ namespace checker
 						{
 							Console.WriteLine(problem.Name + "\t" + problem.Element("Path") + "." + problem.Name);
 						}
-						
 						return 1;
 					}
 					else
@@ -329,7 +328,17 @@ namespace checker
 			if (node.Attribute("Path") == null)
 				ResolvePath(node);
 
-			node.RemoveNodes();
+			//TODO: refactoring needed)
+			if(node.Element("Parameters")!=null)
+			{
+				XElement parameters = new XElement(node.Element("Parameters"));
+				node.RemoveNodes();
+				node.Add(parameters);
+			} else
+			{
+				node.RemoveNodes();
+			}
+
 			return node;
 		}
 
@@ -352,7 +361,7 @@ namespace checker
 		static string GenericsToString(this IGenericParameterProvider self)
 		{
 			var genericsNames = self.GenericParameters.Select(m => m.Name);
-			return genericsNames.Count() > 0 ? ("<" + string.Join(",", genericsNames) + ">") : String.Empty;
+			return genericsNames.Count() > 0 ? ("`" + string.Join(",", genericsNames)) : String.Empty;
 		}
 
 		static string CorrectName(this TypeReference self, bool fullName = false)
@@ -368,7 +377,6 @@ namespace checker
 			using (XmlWriter writer = XmlWriter.Create(
 					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t"}))
 			{
-				//writer.WriteRaw(source.ToString());
 				source.Save(writer);
 			}
 		}
