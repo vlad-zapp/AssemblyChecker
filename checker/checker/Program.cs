@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -323,7 +322,7 @@ namespace checker
 		{
 			var name = fullName ? self.FullName : self.Name;
 			return self.HasGenericParameters
-					? name.Substring(0, name.IndexOf('`') - 1) + self.GenericsToString()
+					? name.Substring(0, name.IndexOf('`')) + self.GenericsToString()
 					: name;
 		}
 
