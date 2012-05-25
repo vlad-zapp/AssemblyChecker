@@ -60,7 +60,7 @@ namespace checker
 					if (report.HasElements)
 					{
 						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
-						
+
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
 
@@ -94,7 +94,7 @@ namespace checker
 			total = fileList.Count();
 			i = 0;
 
-			var typesArrays = fileList.Select(file => ReadAssemblyTypes(file)).Where(it=>it!=null);
+			var typesArrays = fileList.Select(file => ReadAssemblyTypes(file)).Where(it => it != null);
 			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly : null));
 
 			XElement theDump = new XElement("TheDump");
@@ -109,13 +109,13 @@ namespace checker
 
 		private static IEnumerable<TypeDefinition> ReadAssemblyTypes(string file)
 		{
-			Console.WriteLine(++i + " / " +total);
+			Console.WriteLine(++i + " / " + total);
 
 			try
 			{
 				return AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
-			} 
-			catch(Exception)
+			}
+			catch (Exception)
 			{
 				//we don't care about broken or empty files
 				return null;
@@ -205,7 +205,7 @@ namespace checker
 			total = asms1.Count();
 			i = 0;
 
-			foreach (var assembly in asms1)
+			foreach (var assembly in asms1.Where(a => !isCompatible(a)))
 			{
 				Console.WriteLine(++i + " / " + total);
 
@@ -217,13 +217,13 @@ namespace checker
 					continue;
 				}
 
-				CheckTypeMembers(assembly.Elements("Type"), analogInSecond.Elements("Type"));
+				CheckTypeMembers(assembly.Elements("Type").Where(e => !isCompatible(e)), analogInSecond.Elements("Type"));
 			}
 		}
 
 		private static void CheckTypeMembers(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			foreach (var type in first)
+			foreach (var type in first.Where(t => !isCompatible(t)))
 			{
 				var analogInSecond = second.FirstOrDefault(t => BasiclyCompatible(type, t));
 
@@ -233,7 +233,7 @@ namespace checker
 					continue;
 				}
 
-				foreach (var method in type.Elements("Method"))
+				foreach (var method in type.Elements("Method").Where(t => !isCompatible(t)))
 				{
 					if (!analogInSecond.Elements("Method").Any(m => AreMethodsCompatible(method, m)))
 					{
@@ -241,7 +241,7 @@ namespace checker
 					}
 				}
 
-				foreach (var field in type.Elements("Field"))
+				foreach (var field in type.Elements("Field").Where(t => !isCompatible(t)))
 				{
 					if (!analogInSecond.Elements("Field").Any(m => AreFieldsCompatible(field, m)))
 					{
@@ -255,7 +255,12 @@ namespace checker
 
 		#region Compatibility checks
 
-		//TODO: Add assemblies checks
+		//TODO: Add assemblies checks here
+
+		private static bool isCompatible(XElement e)
+		{
+			return e.Attribute("Compatible") != null && e.Attribute("Compatible").Value.ToLowerInvariant() == "true";
+		}
 
 		private static bool BasiclyCompatible(XElement first, XElement second)
 		{
@@ -329,12 +334,13 @@ namespace checker
 				ResolvePath(node);
 
 			//TODO: refactoring needed)
-			if(node.Element("Parameters")!=null)
+			if (node.Element("Parameters") != null)
 			{
 				XElement parameters = new XElement(node.Element("Parameters"));
 				node.RemoveNodes();
 				node.Add(parameters);
-			} else
+			}
+			else
 			{
 				node.RemoveNodes();
 			}
@@ -342,14 +348,41 @@ namespace checker
 			return node;
 		}
 
+		/*
+		* this is for the future :)
+		* 
+		private static XElement ApplyPatch(XElement report, XElement patch)
+		{
+			foreach (var element in report.Elements())
+			{
+				var patchNode = patch.Elements().FirstOrDefault(e => CanPatch(e, element));
+
+				if(patchNode!=null)
+				{
+					if(patchNode.Element("Mode").Value.ToLowerInvariant()=="skip")
+					{
+						element.Attribute("Compatible").Remove();
+					}
+					//else if(patchNode.Element("Mode").Value.ToLowerInvariant()=="override")
+					//{
+					//    if(CanPatch())
+					//}
+				}
+			}
+
+			report.Elements().Where(e=>e.Attribute("Compatible")==null).Remove();
+			return report;
+		}
+		*/
+
 		private static XElement ResolvePath(XElement node)
 		{
 			if (node.Name == "Assembly")
-				node.SetAttributeValue("Path","");
+				node.SetAttributeValue("Path", "");
 
 			if (node.Attribute("Path") != null)
 				return node;
-			
+
 			var parent = ResolvePath(node.Parent);
 			node.SetAttributeValue("Path", String.Format("{0}.{1}", parent.Attribute("Path").Value, parent.Attribute("Name").Value));
 			return node;
@@ -375,7 +408,7 @@ namespace checker
 		static void ProperSave(this XElement source, string filename)
 		{
 			using (XmlWriter writer = XmlWriter.Create(
-					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t"}))
+					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t" }))
 			{
 				source.Save(writer);
 			}
