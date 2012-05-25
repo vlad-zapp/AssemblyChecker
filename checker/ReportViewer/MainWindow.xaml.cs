@@ -1,16 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -48,6 +40,7 @@ namespace ReportViewer
 					case XmlNodeType.Element:
 						XElement childElement = child as XElement;
 						TreeViewItem childTreeNode = new TreeViewItem();
+						treeNode.Items.Add(childTreeNode);
 
 						var textItem = new TextBlock {Text = childElement.Name + " " + childElement.Attribute("Name") + " "
 							+string.Join(" ",childElement.Attributes().Where(a=>a.Name!="Name").Select(m=>m.ToString()))};
@@ -55,6 +48,7 @@ namespace ReportViewer
 						if (Compatible(childElement,"false")==true)
 						{
 							textItem.Foreground = new SolidColorBrush(Colors.DarkRed);
+							ExpandTo(childTreeNode);
 						} 
 						else if(Compatible(childElement,"true")==true)
 						{
@@ -63,10 +57,20 @@ namespace ReportViewer
 
 						childTreeNode.Header = textItem;
 
-						treeNode.Items.Add(childTreeNode);
+						
 						BuildNodes(childTreeNode, childElement);
 						break;
 				}
+			}
+		}
+
+		private void ExpandTo(TreeViewItem childTreeNode)
+		{
+			var parent = (childTreeNode.Parent as TreeViewItem);
+			if(parent!=null)
+			{
+				parent.IsExpanded = true;
+				ExpandTo(parent);
 			}
 		}
 
