@@ -161,6 +161,7 @@ namespace checker
 			if (!type.IsNested)
 				newElement.SetAttributeValue("Path", type.Namespace);
 
+			//adding fields
 			foreach (var field in type.Fields.Where(f => f.IsPublic))
 			{
 				var fieldXml = new XElement("Field");
@@ -178,7 +179,8 @@ namespace checker
 				newElement.Add(fieldXml);
 			}
 
-			foreach (var method in type.Methods.Where(m => m.IsPublic))
+			//adding methods
+			foreach (var method in type.Methods.Where(m => m.IsPublic && !m.IsGetter && !m.IsSetter))
 			{
 				var methodXml = new XElement("Method");
 				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
@@ -201,6 +203,17 @@ namespace checker
 				newElement.Add(methodXml);
 			}
 
+			//adding properties
+			foreach (var property in type.Properties.Where(p => p.GetMethod.IsPublic || p.SetMethod.IsPublic))
+			{
+				var propertyXml = new XElement("Property");
+				propertyXml.SetAttributeValue("Name", property.Name);
+				propertyXml.SetAttributeValue("Type", property.PropertyType.CorrectName());
+				propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
+				propertyXml.SetAttributeValue("Setter", property.GetMethod.IsPublic ? "public" : "not_public");
+			}
+
+			//adding nested types
 			foreach (var nestedType in type.NestedTypes.Where(m => m.IsPublic))
 			{
 				newElement.Add(MakeTypeXmlNode(nestedType));
@@ -220,7 +233,7 @@ namespace checker
 			total = asms1.Count();
 			i = 0;
 
-			foreach (var assembly in asms1.Where(a => !isCompatible(a)))
+			foreach (var assembly in asms1.Where(a => !isUntouchable(a)))
 			{
 				Console.WriteLine(++i + " / " + total);
 
@@ -232,13 +245,13 @@ namespace checker
 					continue;
 				}
 
-				CheckTypeMembers(assembly.Elements("Type").Where(e => !isCompatible(e)), analogInSecond.Elements("Type"));
+				CheckTypeMembers(assembly.SelectTypes().Where(e => !isUntouchable(e)), analogInSecond.SelectTypes());
 			}
 		}
 
 		private static void CheckTypeMembers(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			foreach (var type in first.Where(t => !isCompatible(t)))
+			foreach (var type in first.Where(t => !isUntouchable(t)))
 			{
 				var analogInSecond = second.FirstOrDefault(t => BasiclyCompatible(type, t));
 
@@ -248,7 +261,7 @@ namespace checker
 					continue;
 				}
 
-				foreach (var method in type.Elements("Method").Where(t => !isCompatible(t)))
+				foreach (var method in type.Elements("Method").Where(t => !isUntouchable(t)))
 				{
 					if (!analogInSecond.Elements("Method").Any(m => AreMethodsCompatible(method, m)))
 					{
@@ -256,11 +269,19 @@ namespace checker
 					}
 				}
 
-				foreach (var field in type.Elements("Field").Where(t => !isCompatible(t)))
+				foreach (var field in type.Elements("Field").Where(t => !isUntouchable(t)))
 				{
 					if (!analogInSecond.Elements("Field").Any(m => AreFieldsCompatible(field, m)))
 					{
 						field.SetAttributeValue("Compatible", "false");
+					}
+				}
+
+				foreach (var property in type.Elements("Property").Where(t => !isUntouchable(t)))
+				{
+					if (!analogInSecond.Elements("Property").Any(m => ArePropertiesCompatible(property, m)))
+					{
+						property.SetAttributeValue("Compatible", "false");
 					}
 				}
 
@@ -272,7 +293,7 @@ namespace checker
 
 		//TODO: Add assemblies checks here
 
-		private static bool isCompatible(XElement e)
+		private static bool isUntouchable(XElement e)
 		{
 			return e.Attribute("Compatible") != null && e.Attribute("Compatible").Value.ToLowerInvariant() == "true";
 		}
@@ -301,6 +322,17 @@ namespace checker
 
 				return Enumerable.SequenceEqual(params1, params2);
 			}
+
+			return true;
+		}
+
+		private static bool ArePropertiesCompatible(XElement first, XElement second)
+		{
+			if (!BasiclyCompatible(first, second))
+				return false;
+
+			if (!AreFieldsCompatible(first, second))
+				return false;
 
 			return true;
 		}
@@ -406,6 +438,7 @@ namespace checker
 		#endregion
 
 		#region Helpers
+
 		static string GenericsToString(this IGenericParameterProvider self)
 		{
 			var genericsNames = self.GenericParameters.Select(m => m.Name);
@@ -427,6 +460,11 @@ namespace checker
 			{
 				source.Save(writer);
 			}
+		}
+
+		static IEnumerable<XElement> SelectTypes(this XElement source)
+		{
+			return source.Elements().Where(s => (new[] { "Type", "Struct", "Class", "Interface", "Enum" }).Contains(s.Name.LocalName));
 		}
 
 		#endregion
