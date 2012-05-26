@@ -77,10 +77,11 @@ namespace ReportViewer
 			if (node.Attribute("Compatible") != null)
 				return node.Attribute("Compatible").Value.ToLowerInvariant() == value.ToLowerInvariant();
 
-			if (node.Parent != null) 
-				return Compatible(node.Parent, value);
+			//if (node.Parent != null) 
+			//	return Compatible(node.Parent, value);
 			
-			return false;
+			//return false;
+			return null;
 		}
 	}
 }

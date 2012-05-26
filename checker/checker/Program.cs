@@ -204,13 +204,14 @@ namespace checker
 			}
 
 			//adding properties
-			foreach (var property in type.Properties.Where(p => p.GetMethod.IsPublic || p.SetMethod.IsPublic))
+			foreach (var property in type.Properties.Where(p => (p.GetMethod!=null && p.GetMethod.IsPublic) || (p.SetMethod!=null && p.SetMethod.IsPublic)))
 			{
 				var propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
 				propertyXml.SetAttributeValue("Type", property.PropertyType.CorrectName());
 				propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
 				propertyXml.SetAttributeValue("Setter", property.GetMethod.IsPublic ? "public" : "not_public");
+				newElement.Add(propertyXml);
 			}
 
 			//adding nested types
