@@ -17,7 +17,7 @@ namespace ReportViewer
 		{
 			base.OnStartup(e);
 
-			if (e.Args[0].EndsWith(".xml"))
+			if (e.Args.Count()>0 && e.Args[0].EndsWith(".xml"))
 			{
 				var win = new MainWindow(e.Args[0]).ShowDialog();
 			}

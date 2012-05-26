@@ -43,7 +43,7 @@ namespace ReportViewer
 						treeNode.Items.Add(childTreeNode);
 
 						var textItem = new TextBlock {Text = childElement.Name + " " + childElement.Attribute("Name") + " "
-							+string.Join(" ",childElement.Attributes().Where(a=>a.Name!="Name").Select(m=>m.ToString()))};
+							+string.Join(" ",childElement.Attributes().Where(a=>a.Name!="Name" /*&& a.Name!="Compatible"*/).Select(m=>m.ToString()))};
 
 						if (Compatible(childElement,"false")==true)
 						{
@@ -56,8 +56,6 @@ namespace ReportViewer
 						}
 
 						childTreeNode.Header = textItem;
-
-						
 						BuildNodes(childTreeNode, childElement);
 						break;
 				}

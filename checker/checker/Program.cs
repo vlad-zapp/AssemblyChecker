@@ -89,6 +89,8 @@ namespace checker
 
 		#region Dump
 
+		//TODO: remove previous default files
+
 		private static XElement MakeDumps(IEnumerable<string> fileList)
 		{
 			total = fileList.Count();
@@ -141,7 +143,20 @@ namespace checker
 
 		private static XElement MakeTypeXmlNode(TypeDefinition type)
 		{
-			XElement newElement = new XElement("Type");
+			string typeType;
+
+			if (type.IsInterface)
+				typeType = "Interface";
+			else if (type.IsEnum)
+				typeType = "Enum";
+			else if (type.IsClass)
+				typeType = "Class";
+			else if (type.IsValueType)
+				typeType = "Struct";
+			else
+				typeType = "Type";
+
+			XElement newElement = new XElement(typeType);
 			newElement.SetAttributeValue("Name", type.CorrectName());
 			if (!type.IsNested)
 				newElement.SetAttributeValue("Path", type.Namespace);
@@ -413,6 +428,7 @@ namespace checker
 				source.Save(writer);
 			}
 		}
+
 		#endregion
 	}
 }
