@@ -12,6 +12,19 @@ namespace checker
 	{
 		static int Main(string[] args)
 		{
+			try
+			{
+				return Work(args);
+			} 
+			catch(Exception ex)
+			{
+				Console.WriteLine(ex.Message);
+				return -1;
+			}
+		}
+
+		static int Work(string[] args)
+		{
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				var files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
