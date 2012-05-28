@@ -10,10 +10,6 @@ namespace checker
 {
 	static class Program
 	{
-		//for debug
-		private static int i = 0;
-		private static int total;
-
 		static int Main(string[] args)
 		{
 
@@ -26,8 +22,9 @@ namespace checker
 				foreach (var dir in dirs)
 				{
 					bool recursive = dir.ToLowerInvariant().StartsWith("-r");
-					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.dll", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
-					files.AddRange(Directory.GetFiles(recursive ? dir.Substring(2) : dir, "*.exe", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
+					string dirPath = Path.GetFullPath(recursive ? dir.Substring(2) : dir);
+					files.AddRange(Directory.GetFiles(dirPath, "*.dll", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
+					files.AddRange(Directory.GetFiles(dirPath, "*.exe", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
 				}
 
 				if (files.Count() <= 0)
@@ -55,11 +52,14 @@ namespace checker
 					//TODO: Add patching functionality
 					//TODO: Verbose error output
 
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? ("results-" + xmlSrc) : resultsFile.Substring("fullreport:".Length));
+					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}\results-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc)));
+					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}\report-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc))); 
+
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("fullreport:".Length));
 					var report = GenerateReport(storedAssemblies);
 					if (report.HasElements)
 					{
-						report.ProperSave(String.IsNullOrEmpty(reportFile) ? ("report-" + xmlSrc) : resultsFile.Substring("report:".Length));
+						report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
@@ -84,7 +84,6 @@ namespace checker
 		private static void Usage()
 		{
 			Console.WriteLine("You dont know how to use it!");
-			Console.ReadKey();
 		}
 
 		#region Dump
@@ -93,9 +92,6 @@ namespace checker
 
 		private static XElement MakeDumps(IEnumerable<string> fileList)
 		{
-			total = fileList.Count();
-			i = 0;
-
 			var typesArrays = fileList.Select(file => ReadAssemblyTypes(file)).Where(it => it != null);
 			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly : null));
 
@@ -111,8 +107,6 @@ namespace checker
 
 		private static IEnumerable<TypeDefinition> ReadAssemblyTypes(string file)
 		{
-			Console.WriteLine(++i + " / " + total);
-
 			try
 			{
 				return AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
@@ -209,8 +203,14 @@ namespace checker
 				var propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
 				propertyXml.SetAttributeValue("Type", property.PropertyType.CorrectName());
-				propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
-				propertyXml.SetAttributeValue("Setter", property.GetMethod.IsPublic ? "public" : "not_public");
+				if (property.GetMethod != null)
+				{
+					propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
+				}
+				if (property.SetMethod != null)
+				{
+					propertyXml.SetAttributeValue("Setter", property.SetMethod.IsPublic ? "public" : "not_public");
+				}
 				newElement.Add(propertyXml);
 			}
 
@@ -231,13 +231,8 @@ namespace checker
 			var asms1 = first.Elements("Assembly");
 			var asms2 = second.Elements("Assembly");
 
-			total = asms1.Count();
-			i = 0;
-
 			foreach (var assembly in asms1.Where(a => !isUntouchable(a)))
 			{
-				Console.WriteLine(++i + " / " + total);
-
 				var analogInSecond = asms2.FirstOrDefault(a => BasiclyCompatible(assembly, a));
 
 				if (analogInSecond == null)
@@ -456,8 +451,9 @@ namespace checker
 
 		static void ProperSave(this XElement source, string filename)
 		{
+			string fullFileName = Path.GetFullPath(filename);
 			using (XmlWriter writer = XmlWriter.Create(
-					filename, new XmlWriterSettings() { Indent = true, IndentChars = "\t" }))
+					fullFileName, new XmlWriterSettings() { Indent = true, IndentChars = "\t" }))
 			{
 				source.Save(writer);
 			}
