@@ -12,7 +12,6 @@ namespace checker
 	{
 		static int Main(string[] args)
 		{
-
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				var files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
@@ -49,18 +48,14 @@ namespace checker
 					XElement storedAssemblies = XElement.Load(xmlSrc);
 					CheckAssemblies(storedAssemblies, assemblies);
 
-					//TODO: Add patching functionality
-					//TODO: Verbose error output
-
 					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}\results-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc)));
 					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}\report-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc))); 
 
 					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("fullreport:".Length));
 					var report = GenerateReport(storedAssemblies);
+					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 					if (report.HasElements)
 					{
-						report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
-
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
 
@@ -72,6 +67,7 @@ namespace checker
 					}
 					else
 					{
+						Console.WriteLine("Compatibility test passed!");
 						return 0;
 					}
 				}
