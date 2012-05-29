@@ -74,7 +74,7 @@ namespace checker
 
 						foreach (var problem in report.Elements())
 						{
-							Console.WriteLine(problem.Name + "\t" + problem.Element("Path") + "." + problem.Name);
+							Console.WriteLine(String.Format("{0} {1}\t{2}",problem.Name,problem.Attribute("Name").Value,problem.Attribute("Path").Value));
 						}
 						return 1;
 					}
@@ -177,7 +177,7 @@ namespace checker
 				else
 				{
 					fieldXml.SetAttributeValue("Name", field.Name);
-					fieldXml.SetAttributeValue("Type", field.FieldType.CorrectName(true));
+					fieldXml.SetAttributeValue("Type", field.FieldType);
 				}
 				newElement.Add(fieldXml);
 			}
@@ -187,7 +187,7 @@ namespace checker
 			{
 				var methodXml = new XElement("Method");
 				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
-				methodXml.SetAttributeValue("ReturnType", method.ReturnType.CorrectName(true));
+				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 
 				if (method.HasParameters)
 				{
@@ -196,7 +196,7 @@ namespace checker
 					{
 						var paramXml = new XElement("Parameter");
 						paramXml.SetAttributeValue("Name", parameter.Name);
-						paramXml.SetAttributeValue("Type", parameter.ParameterType.CorrectName(true));
+						paramXml.SetAttributeValue("Type", parameter.ParameterType);
 						paramsXml.Add(paramXml);
 					}
 					methodXml.Add(paramsXml);
@@ -211,7 +211,7 @@ namespace checker
 			{
 				var propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
-				propertyXml.SetAttributeValue("Type", property.PropertyType.CorrectName());
+				propertyXml.SetAttributeValue("Type", property.PropertyType);
 				if (property.GetMethod != null)
 				{
 					propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
