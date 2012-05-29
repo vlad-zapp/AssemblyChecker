@@ -15,8 +15,8 @@ namespace checker
 			try
 			{
 				return Work(args);
-			} 
-			catch(Exception ex)
+			}
+			catch (Exception ex)
 			{
 				Console.WriteLine(ex.Message);
 				return -1;
@@ -27,9 +27,10 @@ namespace checker
 		{
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
-				var files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
-				var xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
-				var dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
+				//TODO: improve detection of dirs
+				List<string> files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
+				IEnumerable<string> dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
+				string xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
 
 				foreach (var dir in dirs)
 				{
@@ -44,8 +45,7 @@ namespace checker
 					Usage();
 				}
 
-				//TODO: try-catch inside needed
-				var assemblies = MakeDumps(files);
+				XElement assemblies = MakeDumps(files);
 
 				if (args[0].ToLowerInvariant() == "-dump")
 				{
@@ -55,17 +55,30 @@ namespace checker
 
 				if (args[0].ToLowerInvariant() == "-check")
 				{
-					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("fullreport:"));
 					string reportFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("report:"));
+					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("complete-report"));
+					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("ignore-list:"));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
-					CheckAssemblies(storedAssemblies, assemblies);
+					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
 
-					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}\results-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc)));
-					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}\report-{1}.xml", Path.GetDirectoryName(xmlSrc), Path.GetFileNameWithoutExtension(xmlSrc))); 
+					string defaultName = Path.ChangeExtension(xmlSrc, null);
+					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml",defaultName));
+					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-fullReport.xml", defaultName));
+					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-ignoreList.xml", defaultName));
 
+					XElement ignoreList = null;
+					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
+					                 	? defaultIgnoreListFile
+					                 	: ignoreListFile.Substring("ignore-list:".Length);
+
+					if (File.Exists(ignoreListFile))
+					{
+						ignoreList = XElement.Load(ignoreListFile);
+					}
+
+					XElement report = GenerateReport(storedAssemblies,ignoreList);
 					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("fullreport:".Length));
-					var report = GenerateReport(storedAssemblies);
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 					if (report.HasElements)
 					{
@@ -74,7 +87,7 @@ namespace checker
 
 						foreach (var problem in report.Elements())
 						{
-							Console.WriteLine(String.Format("{0} {1}\t{2}",problem.Name,problem.Attribute("Name").Value,problem.Attribute("Path").Value));
+							Console.WriteLine(problem.Name+String.Join(" ",problem.Attributes().Select(a=>a.ToString())));
 						}
 						return 1;
 					}
@@ -97,54 +110,50 @@ namespace checker
 
 		#region Dump
 
-		//TODO: remove previous default files
-
 		private static XElement MakeDumps(IEnumerable<string> fileList)
 		{
-			var typesArrays = fileList.Select(file => ReadAssemblyTypes(file)).Where(it => it != null);
-			var assembliesXmlNodes = typesArrays.Select(types => MakeTypeXmlProto(types, types.FirstOrDefault() != null ? types.FirstOrDefault().Module.Assembly : null));
+			IEnumerable<AssemblyDefinition> asmDefinitions =
+				fileList.Select(f => AssemblyDefinition.ReadAssembly(f)).Where(it => it != null);
 
-			XElement theDump = new XElement("TheDump");
-			foreach (var assembly in assembliesXmlNodes)
+			XElement dumpXml = new XElement("CompatibilityInfo");
+			foreach (var assembly in asmDefinitions)
 			{
-				if (assembly.HasElements)
-					theDump.Add(assembly);
+				XElement assemblyXml = DumpAssembly(assembly);
+				if (assemblyXml.HasElements)
+					dumpXml.Add(assemblyXml);
 			}
 
-			return theDump;
+			return dumpXml;
 		}
 
-		private static IEnumerable<TypeDefinition> ReadAssemblyTypes(string file)
+		private static XElement DumpAssembly(AssemblyDefinition source)
 		{
+			IEnumerable<TypeDefinition> sourceTypes;
+
 			try
 			{
-				return AssemblyDefinition.ReadAssembly(file).Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
+				sourceTypes = source.Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
 			}
 			catch (Exception)
 			{
 				//we don't care about broken or empty files
 				return null;
 			}
-		}
 
-		private static XElement MakeTypeXmlProto(IEnumerable<TypeDefinition> source, AssemblyDefinition asmInfo = null)
-		{
-			var rootXml = new XElement("Assembly");
-			if (asmInfo != null)
+			XElement asmXml = new XElement("Assembly");
+
+			asmXml.SetAttributeValue("Name", source.Name.Name);
+			asmXml.SetAttributeValue("Info", source.FullName);
+
+			foreach (var typeDefinition in sourceTypes)
 			{
-				rootXml.SetAttributeValue("Name", asmInfo.Name.Name);
-				rootXml.SetAttributeValue("Info", asmInfo.FullName);
+				asmXml.Add(DumpType(typeDefinition));
 			}
 
-			foreach (var typeDefinition in source)
-			{
-				rootXml.Add(MakeTypeXmlNode(typeDefinition));
-			}
-
-			return rootXml;
+			return asmXml;
 		}
 
-		private static XElement MakeTypeXmlNode(TypeDefinition type)
+		private static XElement DumpType(TypeDefinition type)
 		{
 			string typeType;
 
@@ -159,10 +168,11 @@ namespace checker
 			else
 				typeType = "Type";
 
-			XElement newElement = new XElement(typeType);
-			newElement.SetAttributeValue("Name", type.CorrectName());
+			XElement typeXml = new XElement(typeType);
+			typeXml.SetAttributeValue("Name", type.CorrectName());
+
 			if (!type.IsNested)
-				newElement.SetAttributeValue("Path", type.Namespace);
+				typeXml.SetAttributeValue("Path", type.Namespace);
 
 			//adding fields
 			foreach (var field in type.Fields.Where(f => f.IsPublic))
@@ -179,7 +189,7 @@ namespace checker
 					fieldXml.SetAttributeValue("Name", field.Name);
 					fieldXml.SetAttributeValue("Type", field.FieldType);
 				}
-				newElement.Add(fieldXml);
+				typeXml.Add(fieldXml);
 			}
 
 			//adding methods
@@ -203,11 +213,11 @@ namespace checker
 				}
 
 				methodXml.Add();
-				newElement.Add(methodXml);
+				typeXml.Add(methodXml);
 			}
 
 			//adding properties
-			foreach (var property in type.Properties.Where(p => (p.GetMethod!=null && p.GetMethod.IsPublic) || (p.SetMethod!=null && p.SetMethod.IsPublic)))
+			foreach (var property in type.Properties.Where(p => (p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic)))
 			{
 				var propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
@@ -220,29 +230,26 @@ namespace checker
 				{
 					propertyXml.SetAttributeValue("Setter", property.SetMethod.IsPublic ? "public" : "not_public");
 				}
-				newElement.Add(propertyXml);
+				typeXml.Add(propertyXml);
 			}
 
 			//adding nested types
 			foreach (var nestedType in type.NestedTypes.Where(m => m.IsPublic))
 			{
-				newElement.Add(MakeTypeXmlNode(nestedType));
+				typeXml.Add(DumpType(nestedType));
 			}
-			return newElement;
+			return typeXml;
 		}
 
 		#endregion
 
 		#region Check
 
-		private static void CheckAssemblies(XElement first, XElement second)
+		private static void CheckAssemblies(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			var asms1 = first.Elements("Assembly");
-			var asms2 = second.Elements("Assembly");
-
-			foreach (var assembly in asms1.Where(a => !isUntouchable(a)))
+			foreach (var assembly in first.Where(a => !IsUntouchable(a)))
 			{
-				var analogInSecond = asms2.FirstOrDefault(a => BasiclyCompatible(assembly, a));
+				var analogInSecond = second.FirstOrDefault(a => BasiclyCompatible(assembly, a));
 
 				if (analogInSecond == null)
 				{
@@ -250,13 +257,13 @@ namespace checker
 					continue;
 				}
 
-				CheckTypeMembers(assembly.SelectTypes().Where(e => !isUntouchable(e)), analogInSecond.SelectTypes());
+				CheckTypes(assembly.SelectTypes().Where(e => !IsUntouchable(e)), analogInSecond.SelectTypes());
 			}
 		}
 
-		private static void CheckTypeMembers(IEnumerable<XElement> first, IEnumerable<XElement> second)
+		private static void CheckTypes(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			foreach (var type in first.Where(t => !isUntouchable(t)))
+			foreach (var type in first)
 			{
 				var analogInSecond = second.FirstOrDefault(t => BasiclyCompatible(type, t));
 
@@ -266,7 +273,7 @@ namespace checker
 					continue;
 				}
 
-				foreach (var method in type.Elements("Method").Where(t => !isUntouchable(t)))
+				foreach (var method in type.Elements("Method").Where(t => !IsUntouchable(t)))
 				{
 					if (!analogInSecond.Elements("Method").Any(m => AreMethodsCompatible(method, m)))
 					{
@@ -274,7 +281,7 @@ namespace checker
 					}
 				}
 
-				foreach (var field in type.Elements("Field").Where(t => !isUntouchable(t)))
+				foreach (var field in type.Elements("Field").Where(t => !IsUntouchable(t)))
 				{
 					if (!analogInSecond.Elements("Field").Any(m => AreFieldsCompatible(field, m)))
 					{
@@ -282,7 +289,7 @@ namespace checker
 					}
 				}
 
-				foreach (var property in type.Elements("Property").Where(t => !isUntouchable(t)))
+				foreach (var property in type.Elements("Property").Where(t => !IsUntouchable(t)))
 				{
 					if (!analogInSecond.Elements("Property").Any(m => ArePropertiesCompatible(property, m)))
 					{
@@ -290,15 +297,13 @@ namespace checker
 					}
 				}
 
-				CheckTypeMembers(type.Elements("Type"), analogInSecond.Elements("Type"));
+				CheckTypes(type.Elements("Type").Where(t => !IsUntouchable(t)), analogInSecond.Elements("Type"));
 			}
 		}
 
 		#region Compatibility checks
 
-		//TODO: Add assemblies checks here
-
-		private static bool isUntouchable(XElement e)
+		private static bool IsUntouchable(XElement e)
 		{
 			return e.Attribute("Compatible") != null && e.Attribute("Compatible").Value.ToLowerInvariant() == "true";
 		}
@@ -322,22 +327,11 @@ namespace checker
 			//check parameters
 			if (first.Element("Parameters") != null && second.Element("Parameters") != null)
 			{
-				var params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
-				var params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
+				IEnumerable<string> params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
+				IEnumerable<string> params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
 
 				return Enumerable.SequenceEqual(params1, params2);
 			}
-
-			return true;
-		}
-
-		private static bool ArePropertiesCompatible(XElement first, XElement second)
-		{
-			if (!BasiclyCompatible(first, second))
-				return false;
-
-			if (!AreFieldsCompatible(first, second))
-				return false;
 
 			return true;
 		}
@@ -364,80 +358,72 @@ namespace checker
 			return true;
 		}
 
+		private static bool ArePropertiesCompatible(XElement first, XElement second)
+		{
+			if (!BasiclyCompatible(first, second))
+				return false;
+
+			if (!AreFieldsCompatible(first, second))
+				return false;
+
+			//check accessors and their visibility
+
+			if (first.Attribute("Getter") != null && first.Attribute("Getter").Value.ToLowerInvariant() == "public" &&
+				(second.Attribute("Getter") == null || second.Attribute("Getter").Value.ToLowerInvariant() != "public"))
+				return false;
+
+			if (first.Attribute("Setter") != null && first.Attribute("Setter").Value.ToLowerInvariant() == "public" &&
+				(second.Attribute("Setter") == null || second.Attribute("Setter").Value.ToLowerInvariant() != "public"))
+				return false;
+
+			return true;
+		}
+
 		#endregion
 
 		#endregion
 
 		#region Report
 
-		private static XElement GenerateReport(XElement source)
+		private static XElement GenerateReport(XElement source, XElement ignoreList = null)
 		{
-			var LogNodes =
+			IEnumerable<XElement> logNodes =
 				source.Descendants().Where(d => d.Attribute("Compatible") != null && d.Attribute("Compatible").Value == "false")
 				.Select(node => MakeLogRecord(node));
 
-			XElement report = new XElement("Report", LogNodes);
+			if(ignoreList!=null)
+			{
+				logNodes = logNodes.Where(n => !ignoreList.Elements().Contains(n));
+			}
+
+			XElement report = new XElement("Report", logNodes);
 			return report;
 		}
 
 		private static XElement MakeLogRecord(XElement node)
 		{
-			if (node.Attribute("Path") == null)
-				ResolvePath(node);
+			XElement logNode = new XElement(node);
 
-			//TODO: refactoring needed)
-			if (node.Element("Parameters") != null)
-			{
-				XElement parameters = new XElement(node.Element("Parameters"));
-				node.RemoveNodes();
-				node.Add(parameters);
-			}
-			else
-			{
-				node.RemoveNodes();
-			}
+			logNode.SetAttributeValue("Path", ResolvePath(node));
+			logNode.Elements().Where(e => e.Name.LocalName.ToLowerInvariant() != "parameters").Remove();
 
-			return node;
+			return logNode;
 		}
 
-		/*
-		* this is for the future :)
-		* 
-		private static XElement ApplyPatch(XElement report, XElement patch)
+		private static string ResolvePath(XElement node)
 		{
-			foreach (var element in report.Elements())
-			{
-				var patchNode = patch.Elements().FirstOrDefault(e => CanPatch(e, element));
-
-				if(patchNode!=null)
-				{
-					if(patchNode.Element("Mode").Value.ToLowerInvariant()=="skip")
-					{
-						element.Attribute("Compatible").Remove();
-					}
-					//else if(patchNode.Element("Mode").Value.ToLowerInvariant()=="override")
-					//{
-					//    if(CanPatch())
-					//}
-				}
-			}
-
-			report.Elements().Where(e=>e.Attribute("Compatible")==null).Remove();
-			return report;
-		}
-		*/
-
-		private static XElement ResolvePath(XElement node)
-		{
-			if (node.Name == "Assembly")
-				node.SetAttributeValue("Path", "");
-
 			if (node.Attribute("Path") != null)
-				return node;
+			{
+				return node.Attribute("Path").Value;
+			}
 
-			var parent = ResolvePath(node.Parent);
-			node.SetAttributeValue("Path", String.Format("{0}.{1}", parent.Attribute("Path").Value, parent.Attribute("Name").Value));
-			return node;
+			if (node.Parent != null && node.Parent.Attribute("Name") != null)
+			{
+				string parentPath = ResolvePath(node.Parent);
+				return String.Format("{0}{1}{2}", parentPath, parentPath != null ? "." : String.Empty, node.Parent.Attribute("Name").Value);
+			}
+
+			return null;
 		}
 
 		#endregion
