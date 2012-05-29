@@ -172,6 +172,8 @@ namespace checker
 			XElement typeXml = new XElement(typeType);
 			typeXml.SetAttributeValue("Name", type.CorrectName());
 
+			typeXml.SetAttributeValue("Static", (type.IsClass && type.IsSealed && type.IsAbstract)?"true":null);
+
 			if (!type.IsNested)
 				typeXml.SetAttributeValue("Path", type.Namespace);
 
@@ -179,15 +181,15 @@ namespace checker
 			foreach (var field in type.Fields.Where(f => f.IsPublic))
 			{
 				var fieldXml = new XElement("Field");
+				fieldXml.SetAttributeValue("Name", field.Name);
+				fieldXml.SetAttributeValue("Static",field.IsStatic?"true":null);
 
 				if (type.IsEnum)
 				{
-					fieldXml.SetAttributeValue("Name", field.Name);
 					fieldXml.SetAttributeValue("Value", field.Constant);
 				}
 				else
-				{
-					fieldXml.SetAttributeValue("Name", field.Name);
+				{	
 					fieldXml.SetAttributeValue("Type", field.FieldType);
 				}
 				typeXml.Add(fieldXml);
@@ -199,6 +201,7 @@ namespace checker
 				var methodXml = new XElement("Method");
 				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
+				methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
 
 				if (method.HasParameters)
 				{
@@ -223,13 +226,16 @@ namespace checker
 				var propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
 				propertyXml.SetAttributeValue("Type", property.PropertyType);
+
 				if (property.GetMethod != null)
 				{
 					propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
+					propertyXml.SetAttributeValue("Static", property.GetMethod.IsStatic ? "true" : null);
 				}
 				if (property.SetMethod != null)
 				{
 					propertyXml.SetAttributeValue("Setter", property.SetMethod.IsPublic ? "public" : "not_public");
+					propertyXml.SetAttributeValue("Static", property.SetMethod.IsStatic ? "true" : null);
 				}
 				typeXml.Add(propertyXml);
 			}
@@ -317,7 +323,6 @@ namespace checker
 			{
 				return false;
 			}
-
 
 			//methods: check parameters
 			if (first.Element("Parameters") != null && second.Element("Parameters") != null)
