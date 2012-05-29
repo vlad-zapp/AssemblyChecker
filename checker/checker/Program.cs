@@ -8,6 +8,7 @@ using Mono.Cecil;
 
 namespace checker
 {
+	//TODO: Check for static members and types!!!
 	static class Program
 	{
 		static int Main(string[] args)
@@ -249,7 +250,7 @@ namespace checker
 		{
 			foreach (var assembly in first.Where(a => !IsUntouchable(a)))
 			{
-				var analogInSecond = second.FirstOrDefault(a => BasiclyCompatible(assembly, a));
+				var analogInSecond = second.FirstOrDefault(a => AreCompatible(assembly, a));
 
 				if (analogInSecond == null)
 				{
@@ -265,7 +266,7 @@ namespace checker
 		{
 			foreach (var type in first)
 			{
-				var analogInSecond = second.FirstOrDefault(t => BasiclyCompatible(type, t));
+				var analogInSecond = second.FirstOrDefault(t => AreCompatible(type, t));
 
 				if (analogInSecond == null)
 				{
@@ -273,27 +274,11 @@ namespace checker
 					continue;
 				}
 
-				foreach (var method in type.Elements("Method").Where(t => !IsUntouchable(t)))
+				foreach (var member in type.Elements().Where(t => !IsUntouchable(t)))
 				{
-					if (!analogInSecond.Elements("Method").Any(m => AreMethodsCompatible(method, m)))
+					if (!analogInSecond.Elements().Any(m => AreCompatible(member, m)))
 					{
-						method.SetAttributeValue("Compatible", "false");
-					}
-				}
-
-				foreach (var field in type.Elements("Field").Where(t => !IsUntouchable(t)))
-				{
-					if (!analogInSecond.Elements("Field").Any(m => AreFieldsCompatible(field, m)))
-					{
-						field.SetAttributeValue("Compatible", "false");
-					}
-				}
-
-				foreach (var property in type.Elements("Property").Where(t => !IsUntouchable(t)))
-				{
-					if (!analogInSecond.Elements("Property").Any(m => ArePropertiesCompatible(property, m)))
-					{
-						property.SetAttributeValue("Compatible", "false");
+						member.SetAttributeValue("Compatible", "false");
 					}
 				}
 
@@ -305,26 +290,36 @@ namespace checker
 
 		private static bool IsUntouchable(XElement e)
 		{
-			return e.Attribute("Compatible") != null && e.Attribute("Compatible").Value.ToLowerInvariant() == "true";
+			return e.GetValue("Compatible") == "true";
 		}
 
-		private static bool BasiclyCompatible(XElement first, XElement second)
+		//One generic compatibility check for all. Needed for reports and stuff
+		private static bool AreCompatible(XElement first, XElement second)
 		{
-			return first.Attribute("Name").Value == second.Attribute("Name").Value;
-		}
+			bool compatible =
+				//whatever: check tag names 
+				first.Name.LocalName == second.Name.LocalName &&
+				//whatever: check names 
+				first.GetValue("Name") == second.GetValue("Name") &&
+				//whatever: static or not
+				first.GetValue("Static") == second.GetValue("Static") &&
+				//fields&properties: check type
+				first.GetValue("Type") == second.GetValue("Type") &&
+				//enums: check value
+				first.GetValue("Value") == second.GetValue("Value") &&
+				//properties: getter and setter 
+				!(first.GetValue("Getter") == "public" && first.GetValue("Getter") != second.GetValue("Getter")) &&
+				!(first.GetValue("Setter") == "public" && first.GetValue("Setter") != second.GetValue("Setter")) &&
+				//methods: check return type
+				first.GetValue("ReturnType") == second.GetValue("ReturnType");
 
-		private static bool AreMethodsCompatible(XElement first, XElement second)
-		{
-			if (!BasiclyCompatible(first, second))
-				return false;
-
-			//check return types
-			if (first.Attribute("ReturnType").Value != second.Attribute("ReturnType").Value)
+			if (!compatible)
 			{
 				return false;
 			}
 
-			//check parameters
+
+			//methods: check parameters
 			if (first.Element("Parameters") != null && second.Element("Parameters") != null)
 			{
 				IEnumerable<string> params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
@@ -332,49 +327,6 @@ namespace checker
 
 				return Enumerable.SequenceEqual(params1, params2);
 			}
-
-			return true;
-		}
-
-		private static bool AreFieldsCompatible(XElement first, XElement second)
-		{
-			if (!BasiclyCompatible(first, second))
-				return false;
-
-			//check field type
-			if (first.Attribute("Type") != null && second.Attribute("Type") != null)
-				if (first.Attribute("Type").Value != second.Attribute("Type").Value)
-				{
-					return false;
-				}
-
-			//check enum fields
-			if (first.Attribute("Value") != null && second.Attribute("Value") != null)
-				if (first.Attribute("Value").Value != second.Attribute("Value").Value)
-				{
-					return false;
-				}
-
-			return true;
-		}
-
-		private static bool ArePropertiesCompatible(XElement first, XElement second)
-		{
-			if (!BasiclyCompatible(first, second))
-				return false;
-
-			if (!AreFieldsCompatible(first, second))
-				return false;
-
-			//check accessors and their visibility
-
-			if (first.Attribute("Getter") != null && first.Attribute("Getter").Value.ToLowerInvariant() == "public" &&
-				(second.Attribute("Getter") == null || second.Attribute("Getter").Value.ToLowerInvariant() != "public"))
-				return false;
-
-			if (first.Attribute("Setter") != null && first.Attribute("Setter").Value.ToLowerInvariant() == "public" &&
-				(second.Attribute("Setter") == null || second.Attribute("Setter").Value.ToLowerInvariant() != "public"))
-				return false;
 
 			return true;
 		}
@@ -388,19 +340,19 @@ namespace checker
 		private static XElement GenerateReport(XElement source, XElement ignoreList = null)
 		{
 			IEnumerable<XElement> logNodes =
-				source.Descendants().Where(d => d.Attribute("Compatible") != null && d.Attribute("Compatible").Value == "false")
-				.Select(node => MakeLogRecord(node));
+				source.Descendants().Where(d => d.GetValue("Compatible") == "false")
+				.Select(node => MakeReportRecord(node));
 
 			if(ignoreList!=null)
 			{
-				logNodes = logNodes.Where(n => !ignoreList.Elements().Contains(n));
+				logNodes = logNodes.Where(n => !ignoreList.Elements().Any(m=>AreCompatible(n,m)));
 			}
 
 			XElement report = new XElement("Report", logNodes);
 			return report;
 		}
 
-		private static XElement MakeLogRecord(XElement node)
+		private static XElement MakeReportRecord(XElement node)
 		{
 			XElement logNode = new XElement(node);
 
@@ -454,9 +406,18 @@ namespace checker
 			}
 		}
 
+		static string GetValue(this XElement self, string attributeName)
+		{
+			if (self.Attribute(attributeName) == null)
+				return null;
+
+			return self.Attribute(attributeName).Value.ToLowerInvariant();
+		}
+
 		static IEnumerable<XElement> SelectTypes(this XElement source)
 		{
-			return source.Elements().Where(s => (new[] { "Type", "Struct", "Class", "Interface", "Enum" }).Contains(s.Name.LocalName));
+			IEnumerable<string> types = new[] {"Type", "Struct", "Class", "Interface", "Enum"};
+			return source.Elements().Where(s => types.Contains(s.Name.LocalName));
 		}
 
 		#endregion
