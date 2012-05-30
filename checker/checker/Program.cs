@@ -106,7 +106,22 @@ namespace checker
 
 		private static void Usage()
 		{
-			Console.WriteLine("You dont know how to use it!");
+			Console.WriteLine("Assembly compatibility checker for .NET");
+			Console.WriteLine();
+			Console.WriteLine("Usage: AsmChecker.exe -dump|-check files|directories [dump file] [options]");
+			Console.WriteLine();
+			Console.WriteLine("First argument specifies the action:");
+			Console.WriteLine("\tDUMP assembly members signatures to a file, or\n\tCHECK assemblies compatibility with some existing dump");
+			Console.WriteLine();
+			Console.Write("Then you must specify at least one assembly file name, or directory,\nwhere it can be located. ");
+			Console.Write("Directory path should always end with \\ symbol.\nIf you specify \"-d\" right berore it - the program will search for the files\nin subdirectories too.\n\n");
+			Console.Write("After that you can supply a path to xml file, where the dump will be stored, or where to read it from (depends on specified action). ");
+			Console.Write("If no file supplied - \nthe default will be used (prototypes.xml in the application folder)\n\n");
+			Console.WriteLine("Options are for checking only.");
+			Console.WriteLine("ignore:file.xml - path to ignore file. Default is %dump%-ignore.xml");
+			Console.WriteLine("ignore:file.xml - path to report file. Default is %dump%-report.xml");
+			Console.WriteLine("ignore:file.xml - path to results file. Default is %dump%-results.xml");
+			Console.WriteLine("Where %dump% - is a full name of dump file without extension");
 		}
 
 		#region Dump
@@ -211,6 +226,7 @@ namespace checker
 				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 				methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
 				methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
+				methodXml.SetAttributeValue("Override", method.Overrides!=null ? "true" : null);
 
 				if (method.HasParameters)
 				{
@@ -325,7 +341,9 @@ namespace checker
 				//methods: check return type
 				first.GetValue("ReturnType") == second.GetValue("ReturnType") &&
 				//methods: virtual or not
-				first.GetValue("Virtual") == second.GetValue("Virtual") &&				
+				first.GetValue("Virtual") == second.GetValue("Virtual") &&
+				//methods: override
+				first.GetValue("Override") == second.GetValue("Override") &&
 				//properties: getter and setter 
 				!(first.GetValue("Getter") == "public" && first.GetValue("Getter") != second.GetValue("Getter")) &&
 				!(first.GetValue("Setter") == "public" && first.GetValue("Setter") != second.GetValue("Setter")) &&
