@@ -67,19 +67,20 @@ namespace checker
 					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-results.xml", defaultName));
 					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-patch.xml", defaultName));
 
-					XElement xmlPatch = null;
 					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
 										? defaultIgnoreListFile
 										: ignoreListFile.Substring("patch:".Length);
 
 					if (File.Exists(ignoreListFile))
 					{
-						xmlPatch = XElement.Load(ignoreListFile);
+						XElement xmlPatch = XElement.Load(ignoreListFile);
 						ApplyPatch(storedAssemblies, xmlPatch);
 					}
 
 					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
-					XElement report = GenerateReport(storedAssemblies, xmlPatch);
+					GenerateReport(storedAssemblies);
+
+					XElement report = storedAssemblies;
 
 					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("report:".Length));
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("results:".Length));
@@ -404,45 +405,19 @@ namespace checker
 
 		#region Report
 
-		private static XElement GenerateReport(XElement source, XElement ignoreList = null)
+		private static bool GenerateReport(XElement source)
 		{
-			IEnumerable<XElement> logNodes =
-				source.Descendants().Where(d => d.GetValue("Compatible") == "false")
-				.Select(node => MakeReportRecord(node));
-
-			if (ignoreList != null)
+			if (source.GetValue("Compatible") == "false")
 			{
-				logNodes = logNodes.Where(n => !ignoreList.Elements().Any(m => AreCompatible(n, m)));
+				source.Elements().Where(e=>e.Name!="Parameters").Remove();
+				return true;
 			}
 
-			XElement report = new XElement("Report", logNodes);
-			return report;
-		}
+			if (!source.HasElements)
+				return false;
 
-		private static XElement MakeReportRecord(XElement node)
-		{
-			XElement logNode = new XElement(node);
-
-			logNode.SetAttributeValue("Path", ResolvePath(node));
-			logNode.Elements().Where(e => e.Name.LocalName.ToLowerInvariant() != "parameters").Remove();
-
-			return logNode;
-		}
-
-		private static string ResolvePath(XElement node)
-		{
-			if (node.Attribute("Path") != null)
-			{
-				return node.Attribute("Path").Value;
-			}
-
-			if (node.Parent != null && node.Parent.Attribute("Name") != null)
-			{
-				string parentPath = ResolvePath(node.Parent);
-				return String.Format("{0}{1}{2}", parentPath, parentPath != null ? "." : String.Empty, node.Parent.Attribute("Name").Value);
-			}
-
-			return null;
+			source.Elements().Where(e=>!GenerateReport(e)).Remove();
+			return source.HasElements;
 		}
 
 		#endregion
