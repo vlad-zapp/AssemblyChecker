@@ -57,21 +57,21 @@ namespace checker
 				if (args[0].ToLowerInvariant() == "-check")
 				{
 					string reportFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("report:"));
-					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("complete-report"));
-					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("ignore-list:"));
+					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("results:"));
+					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("ignore:"));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
 					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
 
 					string defaultName = Path.ChangeExtension(xmlSrc, null);
 					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml",defaultName));
-					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-fullReport.xml", defaultName));
-					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-ignoreList.xml", defaultName));
+					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-results.xml", defaultName));
+					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-ignore.xml", defaultName));
 
 					XElement ignoreList = null;
 					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
 					                 	? defaultIgnoreListFile
-					                 	: ignoreListFile.Substring("ignore-list:".Length);
+										: ignoreListFile.Substring("ignore:".Length);
 
 					if (File.Exists(ignoreListFile))
 					{
@@ -79,8 +79,8 @@ namespace checker
 					}
 
 					XElement report = GenerateReport(storedAssemblies,ignoreList);
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("fullreport:".Length));
-					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("report:".Length));
+					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("results:".Length));
 					if (report.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
@@ -172,7 +172,15 @@ namespace checker
 			XElement typeXml = new XElement(typeType);
 			typeXml.SetAttributeValue("Name", type.CorrectName());
 
-			typeXml.SetAttributeValue("Static", (type.IsClass && type.IsSealed && type.IsAbstract)?"true":null);
+			
+			if(type.IsClass && type.IsSealed && type.IsAbstract)
+			{
+				typeXml.SetAttributeValue("Static", "true");
+			}
+			else if (type.IsClass && type.IsAbstract)
+			{
+				typeXml.SetAttributeValue("Abstract","true");
+			}
 
 			if (!type.IsNested)
 				typeXml.SetAttributeValue("Path", type.Namespace);
@@ -202,6 +210,7 @@ namespace checker
 				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 				methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
+				methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
 
 				if (method.HasParameters)
 				{
@@ -309,15 +318,19 @@ namespace checker
 				first.GetValue("Name") == second.GetValue("Name") &&
 				//whatever: static or not
 				first.GetValue("Static") == second.GetValue("Static") &&
+				//classes: abstract or not
+				first.GetValue("Abstract") == second.GetValue("Abstract") &&
 				//fields&properties: check type
 				first.GetValue("Type") == second.GetValue("Type") &&
-				//enums: check value
-				first.GetValue("Value") == second.GetValue("Value") &&
+				//methods: check return type
+				first.GetValue("ReturnType") == second.GetValue("ReturnType") &&
+				//methods: virtual or not
+				first.GetValue("Virtual") == second.GetValue("Virtual") &&				
 				//properties: getter and setter 
 				!(first.GetValue("Getter") == "public" && first.GetValue("Getter") != second.GetValue("Getter")) &&
 				!(first.GetValue("Setter") == "public" && first.GetValue("Setter") != second.GetValue("Setter")) &&
-				//methods: check return type
-				first.GetValue("ReturnType") == second.GetValue("ReturnType");
+				//enums: check value
+				first.GetValue("Value") == second.GetValue("Value");
 
 			if (!compatible)
 			{
