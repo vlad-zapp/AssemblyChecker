@@ -33,7 +33,7 @@ namespace checker
 				IEnumerable<string> dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
 				string xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
 
-				foreach (var dir in dirs)
+				foreach (string dir in dirs)
 				{
 					bool recursive = dir.ToLowerInvariant().StartsWith("-r");
 					string dirPath = Path.GetFullPath(recursive ? dir.Substring(2) : dir);
@@ -86,7 +86,7 @@ namespace checker
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
 
-						foreach (var problem in report.Elements())
+						foreach (XElement problem in report.Elements())
 						{
 							Console.WriteLine(problem.Name+String.Join(" ",problem.Attributes().Select(a=>a.ToString())));
 						}
@@ -132,7 +132,7 @@ namespace checker
 				fileList.Select(f => AssemblyDefinition.ReadAssembly(f)).Where(it => it != null);
 
 			XElement dumpXml = new XElement("CompatibilityInfo");
-			foreach (var assembly in asmDefinitions)
+			foreach (AssemblyDefinition assembly in asmDefinitions)
 			{
 				XElement assemblyXml = DumpAssembly(assembly);
 				if (assemblyXml.HasElements)
@@ -161,7 +161,7 @@ namespace checker
 			asmXml.SetAttributeValue("Name", source.Name.Name);
 			asmXml.SetAttributeValue("Info", source.FullName);
 
-			foreach (var typeDefinition in sourceTypes)
+			foreach (TypeDefinition typeDefinition in sourceTypes)
 			{
 				asmXml.Add(DumpType(typeDefinition));
 			}
@@ -201,9 +201,9 @@ namespace checker
 				typeXml.SetAttributeValue("Path", type.Namespace);
 
 			//adding fields
-			foreach (var field in type.Fields.Where(f => f.IsPublic))
+			foreach (FieldDefinition field in type.Fields.Where(f => f.IsPublic))
 			{
-				var fieldXml = new XElement("Field");
+				XElement fieldXml = new XElement("Field");
 				fieldXml.SetAttributeValue("Name", field.Name);
 				fieldXml.SetAttributeValue("Static",field.IsStatic?"true":null);
 
@@ -219,9 +219,9 @@ namespace checker
 			}
 
 			//adding methods
-			foreach (var method in type.Methods.Where(m => m.IsPublic && !m.IsGetter && !m.IsSetter))
+			foreach (MethodDefinition method in type.Methods.Where(m => m.IsPublic && !m.IsGetter && !m.IsSetter))
 			{
-				var methodXml = new XElement("Method");
+				XElement methodXml = new XElement("Method");
 				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 				methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
@@ -230,10 +230,10 @@ namespace checker
 
 				if (method.HasParameters)
 				{
-					var paramsXml = new XElement("Parameters");
-					foreach (var parameter in method.Parameters)
+					XElement paramsXml = new XElement("Parameters");
+					foreach (ParameterDefinition parameter in method.Parameters)
 					{
-						var paramXml = new XElement("Parameter");
+						XElement paramXml = new XElement("Parameter");
 						paramXml.SetAttributeValue("Name", parameter.Name);
 						paramXml.SetAttributeValue("Type", parameter.ParameterType);
 						paramsXml.Add(paramXml);
@@ -246,9 +246,9 @@ namespace checker
 			}
 
 			//adding properties
-			foreach (var property in type.Properties.Where(p => (p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic)))
+			foreach (PropertyDefinition property in type.Properties.Where(p => (p.GetMethod != null && p.GetMethod.IsPublic) || (p.SetMethod != null && p.SetMethod.IsPublic)))
 			{
-				var propertyXml = new XElement("Property");
+				XElement propertyXml = new XElement("Property");
 				propertyXml.SetAttributeValue("Name", property.Name);
 				propertyXml.SetAttributeValue("Type", property.PropertyType);
 
@@ -266,7 +266,7 @@ namespace checker
 			}
 
 			//adding nested types
-			foreach (var nestedType in type.NestedTypes.Where(m => m.IsPublic))
+			foreach (TypeDefinition nestedType in type.NestedTypes.Where(m => m.IsPublic))
 			{
 				typeXml.Add(DumpType(nestedType));
 			}
@@ -279,9 +279,9 @@ namespace checker
 
 		private static void CheckAssemblies(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			foreach (var assembly in first.Where(a => !IsUntouchable(a)))
+			foreach (XElement assembly in first.Where(a => !IsUntouchable(a)))
 			{
-				var analogInSecond = second.FirstOrDefault(a => AreCompatible(assembly, a));
+				XElement analogInSecond = second.FirstOrDefault(a => AreCompatible(assembly, a));
 
 				if (analogInSecond == null)
 				{
@@ -295,9 +295,9 @@ namespace checker
 
 		private static void CheckTypes(IEnumerable<XElement> first, IEnumerable<XElement> second)
 		{
-			foreach (var type in first)
+			foreach (XElement type in first)
 			{
-				var analogInSecond = second.FirstOrDefault(t => AreCompatible(type, t));
+				XElement analogInSecond = second.FirstOrDefault(t => AreCompatible(type, t));
 
 				if (analogInSecond == null)
 				{
@@ -305,7 +305,7 @@ namespace checker
 					continue;
 				}
 
-				foreach (var member in type.Elements().Where(t => !IsUntouchable(t)))
+				foreach (XElement member in type.Elements().Where(t => !IsUntouchable(t)))
 				{
 					if (!analogInSecond.Elements().Any(m => AreCompatible(member, m)))
 					{
@@ -420,13 +420,13 @@ namespace checker
 
 		static string GenericsToString(this IGenericParameterProvider self)
 		{
-			var genericsNames = self.GenericParameters.Select(m => m.Name);
+			IEnumerable<string> genericsNames = self.GenericParameters.Select(m => m.Name);
 			return genericsNames.Count() > 0 ? ("`" + string.Join(",", genericsNames)) : String.Empty;
 		}
 
 		static string CorrectName(this TypeReference self, bool fullName = false)
 		{
-			var name = fullName ? self.FullName : self.Name;
+			string name = fullName ? self.FullName : self.Name;
 			return self.HasGenericParameters
 					? name.Substring(0, name.IndexOf('`')) + self.GenericsToString()
 					: name;
