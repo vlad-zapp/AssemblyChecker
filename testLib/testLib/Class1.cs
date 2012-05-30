@@ -88,5 +88,20 @@ namespace testLib
 			}
 			return "default";
 		}
+
+		public string test()
+		{
+			return "hi0";
+		}
+
+		public string test(int num)
+		{
+			return "hi"+num.ToString();
+		}
+
+		public string test(int num, int num2)
+		{
+			return num.ToString()+"hi" + num2.ToString();
+		}
 	}
 }

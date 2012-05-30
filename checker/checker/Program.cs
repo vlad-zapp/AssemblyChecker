@@ -9,7 +9,6 @@ using Mono.Cecil;
 
 namespace checker
 {
-	//TODO: Check for static members and types!!!
 	static class Program
 	{
 		static int Main(string[] args)
@@ -62,37 +61,29 @@ namespace checker
 					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("patch:"));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
-					
+
 					string defaultName = Path.ChangeExtension(xmlSrc, null);
-					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml",defaultName));
+					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml", defaultName));
 					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-results.xml", defaultName));
 					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-patch.xml", defaultName));
 
 					XElement xmlPatch = null;
 					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
-					                 	? defaultIgnoreListFile
+										? defaultIgnoreListFile
 										: ignoreListFile.Substring("patch:".Length);
 
 					if (File.Exists(ignoreListFile))
 					{
-						//merge xml with the help of DataSets
 						xmlPatch = XElement.Load(ignoreListFile);
-						
-						DataSet ds1 = new DataSet();
-						ds1.ReadXml(storedAssemblies.CreateReader());
-						DataSet ds2 = new DataSet();
-						ds2.ReadXml(xmlPatch.CreateReader());
-
-						ds1.Merge(ds2);
-						storedAssemblies = XElement.Parse(ds1.GetXml());
+						ApplyPatch(storedAssemblies, xmlPatch);
 					}
 
 					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
-					XElement report = GenerateReport(storedAssemblies,xmlPatch);
+					XElement report = GenerateReport(storedAssemblies, xmlPatch);
 
 					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("report:".Length));
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("results:".Length));
-					
+
 					if (report.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
@@ -100,7 +91,7 @@ namespace checker
 
 						foreach (XElement problem in report.Elements())
 						{
-							Console.WriteLine(problem.Name+String.Join(" ",problem.Attributes().Select(a=>a.ToString())));
+							Console.WriteLine(String.Format("{0} {1}", problem.Name, String.Join(" ", problem.Attributes().Select(a => a.ToString()))));
 						}
 						return 1;
 					}
@@ -199,14 +190,14 @@ namespace checker
 			XElement typeXml = new XElement(typeType);
 			typeXml.SetAttributeValue("Name", type.CorrectName());
 
-			
-			if(type.IsClass && type.IsSealed && type.IsAbstract)
+
+			if (type.IsClass && type.IsSealed && type.IsAbstract)
 			{
 				typeXml.SetAttributeValue("Static", "true");
 			}
 			else if (type.IsClass && type.IsAbstract)
 			{
-				typeXml.SetAttributeValue("Abstract","true");
+				typeXml.SetAttributeValue("Abstract", "true");
 			}
 
 			if (!type.IsNested)
@@ -217,14 +208,14 @@ namespace checker
 			{
 				XElement fieldXml = new XElement("Field");
 				fieldXml.SetAttributeValue("Name", field.Name);
-				fieldXml.SetAttributeValue("Static",field.IsStatic?"true":null);
+				fieldXml.SetAttributeValue("Static", field.IsStatic ? "true" : null);
 
 				if (type.IsEnum)
 				{
 					fieldXml.SetAttributeValue("Value", field.Constant);
 				}
 				else
-				{	
+				{
 					fieldXml.SetAttributeValue("Type", field.FieldType);
 				}
 				typeXml.Add(fieldXml);
@@ -233,28 +224,7 @@ namespace checker
 			//adding methods
 			foreach (MethodDefinition method in type.Methods.Where(m => m.IsPublic && !m.IsGetter && !m.IsSetter))
 			{
-				XElement methodXml = new XElement("Method");
-				methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
-				methodXml.SetAttributeValue("ReturnType", method.ReturnType);
-				methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
-				methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
-				methodXml.SetAttributeValue("Override", method.Overrides!=null ? "true" : null);
-
-				if (method.HasParameters)
-				{
-					XElement paramsXml = new XElement("Parameters");
-					foreach (ParameterDefinition parameter in method.Parameters)
-					{
-						XElement paramXml = new XElement("Parameter");
-						paramXml.SetAttributeValue("Name", parameter.Name);
-						paramXml.SetAttributeValue("Type", parameter.ParameterType);
-						paramsXml.Add(paramXml);
-					}
-					methodXml.Add(paramsXml);
-				}
-
-				methodXml.Add();
-				typeXml.Add(methodXml);
+				typeXml.Add(DumpMethod(method));
 			}
 
 			//adding properties
@@ -266,13 +236,11 @@ namespace checker
 
 				if (property.GetMethod != null)
 				{
-					propertyXml.SetAttributeValue("Getter", property.GetMethod.IsPublic ? "public" : "not_public");
-					propertyXml.SetAttributeValue("Static", property.GetMethod.IsStatic ? "true" : null);
+					propertyXml.Add(DumpMethod(property.GetMethod));
 				}
 				if (property.SetMethod != null)
 				{
-					propertyXml.SetAttributeValue("Setter", property.SetMethod.IsPublic ? "public" : "not_public");
-					propertyXml.SetAttributeValue("Static", property.SetMethod.IsStatic ? "true" : null);
+					propertyXml.Add(DumpMethod(property.SetMethod));
 				}
 				typeXml.Add(propertyXml);
 			}
@@ -283,6 +251,46 @@ namespace checker
 				typeXml.Add(DumpType(nestedType));
 			}
 			return typeXml;
+		}
+
+		private static XElement DumpMethod(MethodDefinition method)
+		{
+			XElement methodXml = new XElement("Method");
+			methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
+			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
+			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
+			methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
+			methodXml.SetAttributeValue("Override", method.Overrides != null ? "true" : null);
+
+			if (method.HasParameters)
+			{
+				XElement paramsXml = new XElement("Parameters");
+				foreach (ParameterDefinition parameter in method.Parameters)
+				{
+					XElement paramXml = new XElement("Parameter");
+					paramXml.SetAttributeValue("Name", parameter.Name);
+					paramXml.SetAttributeValue("Type", parameter.ParameterType);
+					paramsXml.Add(paramXml);
+				}
+				methodXml.Add(paramsXml);
+			}
+			return methodXml;
+		}
+
+		private static void ApplyPatch(XElement source, XElement patch)
+		{
+			if (patch == null)
+				return;
+
+			foreach (XAttribute attribute in patch.Attributes())
+			{
+				source.SetAttributeValue(attribute.Name, attribute.Value);
+			}
+
+			foreach (XElement element in source.Elements())
+			{
+				ApplyPatch(element, patch.Elements(element.Name.LocalName).SingleOrDefault(e => AreCompatible(element, e)));
+			}
 		}
 
 		#endregion
@@ -333,10 +341,7 @@ namespace checker
 
 		private static bool IsUntouchable(XElement e)
 		{
-			if (e.Element("Patch") == null)
-				return false;
-
-			return e.Element("Patch").GetValue("Compatible") == "true";
+			return e.GetValue("Compatible") == "true";
 		}
 
 		//One generic compatibility check for all. Needed for reports and stuff
@@ -371,12 +376,23 @@ namespace checker
 			}
 
 			//methods: check parameters
-			if (first.Element("Parameters") != null && second.Element("Parameters") != null)
+			if (first.Element("Parameters") == null ^ second.Element("Parameters") == null)
+			{
+				return false;
+			}
+
+			if (first.Element("Parameters") != null)
 			{
 				IEnumerable<string> params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
 				IEnumerable<string> params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
 
 				return Enumerable.SequenceEqual(params1, params2);
+			}
+
+			//Check properties acessors
+			if (first.Name.LocalName == "Property" && second.Name.LocalName == "Property")
+			{
+				return first.Elements("Method").All(m => second.Elements("Method").Any(n => AreCompatible(m, n)));
 			}
 
 			return true;
@@ -394,9 +410,9 @@ namespace checker
 				source.Descendants().Where(d => d.GetValue("Compatible") == "false")
 				.Select(node => MakeReportRecord(node));
 
-			if(ignoreList!=null)
+			if (ignoreList != null)
 			{
-				logNodes = logNodes.Where(n => !ignoreList.Elements().Any(m=>AreCompatible(n,m)));
+				logNodes = logNodes.Where(n => !ignoreList.Elements().Any(m => AreCompatible(n, m)));
 			}
 
 			XElement report = new XElement("Report", logNodes);
@@ -467,7 +483,7 @@ namespace checker
 
 		static IEnumerable<XElement> SelectTypes(this XElement source)
 		{
-			IEnumerable<string> types = new[] {"Type", "Struct", "Class", "Interface", "Enum"};
+			IEnumerable<string> types = new[] { "Type", "Struct", "Class", "Interface", "Enum" };
 			return source.Elements().Where(s => types.Contains(s.Name.LocalName));
 		}
 
