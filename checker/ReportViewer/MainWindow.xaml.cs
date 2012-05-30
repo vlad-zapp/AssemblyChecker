@@ -6,7 +6,7 @@ using System.Windows.Media;
 using System.Xml;
 using System.Xml.Linq;
 
-namespace ReportViewer
+namespace AsmChecker.ReportViewer
 {
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Windows;
 using System.Xml.Linq;
 
-namespace ReportViewer
+namespace AsmChecker.ReportViewer
 {
 	/// <summary>
 	/// Interaction logic for App.xaml
