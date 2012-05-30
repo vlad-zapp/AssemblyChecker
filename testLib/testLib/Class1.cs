@@ -104,4 +104,29 @@ namespace testLib
 			return num.ToString()+"hi" + num2.ToString();
 		}
 	}
+
+	public abstract class clas1
+	{
+		public virtual string test()
+		{
+			return "";
+		}
+
+		public virtual string test2()
+		{
+			return "";
+		}
+	}
+
+	public class clas2:clas1
+	{
+		public override string test()
+		{
+			return "ok";
+		}
+		public string test2()
+		{
+			return "oasdk";
+		}
+	}
 }

@@ -260,7 +260,7 @@ namespace checker
 			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
 			methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
-			methodXml.SetAttributeValue("Override", method.Overrides != null ? "true" : null);
+			methodXml.SetAttributeValue("Override", method.IsVirtual && !method.IsNewSlot ? "true" : null);
 
 			if (method.HasParameters)
 			{
