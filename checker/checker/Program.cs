@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -58,29 +59,40 @@ namespace checker
 				{
 					string reportFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("report:"));
 					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("results:"));
-					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("ignore:"));
+					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("patch:"));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
-					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
-
+					
 					string defaultName = Path.ChangeExtension(xmlSrc, null);
 					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml",defaultName));
 					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-results.xml", defaultName));
-					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-ignore.xml", defaultName));
+					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-patch.xml", defaultName));
 
-					XElement ignoreList = null;
+					XElement xmlPatch = null;
 					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
 					                 	? defaultIgnoreListFile
-										: ignoreListFile.Substring("ignore:".Length);
+										: ignoreListFile.Substring("patch:".Length);
 
 					if (File.Exists(ignoreListFile))
 					{
-						ignoreList = XElement.Load(ignoreListFile);
+						//merge xml with the help of DataSets
+						xmlPatch = XElement.Load(ignoreListFile);
+						
+						DataSet ds1 = new DataSet();
+						ds1.ReadXml(storedAssemblies.CreateReader());
+						DataSet ds2 = new DataSet();
+						ds2.ReadXml(xmlPatch.CreateReader());
+
+						ds1.Merge(ds2);
+						storedAssemblies = XElement.Parse(ds1.GetXml());
 					}
 
-					XElement report = GenerateReport(storedAssemblies,ignoreList);
+					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
+					XElement report = GenerateReport(storedAssemblies,xmlPatch);
+
 					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("report:".Length));
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("results:".Length));
+					
 					if (report.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
@@ -118,9 +130,9 @@ namespace checker
 			Console.Write("After that you can supply a path to xml file, where the dump will be stored, or where to read it from (depends on specified action). ");
 			Console.Write("If no file supplied - \nthe default will be used (prototypes.xml in the application folder)\n\n");
 			Console.WriteLine("Options are for checking only.");
-			Console.WriteLine("ignore:file.xml - path to ignore file. Default is %dump%-ignore.xml");
-			Console.WriteLine("ignore:file.xml - path to report file. Default is %dump%-report.xml");
-			Console.WriteLine("ignore:file.xml - path to results file. Default is %dump%-results.xml");
+			Console.WriteLine("patch:file.xml - path to patch file. Default is %dump%-patch.xml");
+			Console.WriteLine("report:file.xml - path to report file. Default is %dump%-report.xml");
+			Console.WriteLine("results:file.xml - path to results file. Default is %dump%-results.xml");
 			Console.WriteLine("Where %dump% - is a full name of dump file without extension");
 		}
 
@@ -321,7 +333,10 @@ namespace checker
 
 		private static bool IsUntouchable(XElement e)
 		{
-			return e.GetValue("Compatible") == "true";
+			if (e.Element("Patch") == null)
+				return false;
+
+			return e.Element("Patch").GetValue("Compatible") == "true";
 		}
 
 		//One generic compatibility check for all. Needed for reports and stuff
