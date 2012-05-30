@@ -57,40 +57,34 @@ namespace checker
 				if (args[0].ToLowerInvariant() == "-check")
 				{
 					string reportFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("report:"));
-					string resultsFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("results:"));
-					string ignoreListFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("patch:"));
+					string patchFile = args.SingleOrDefault(a => a.ToLowerInvariant().StartsWith("patch:"));
+
+					string xmlSrcFileName = Path.ChangeExtension(xmlSrc, null);
+					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml", xmlSrcFileName));
+					string defaultPatchFile = Path.GetFullPath(String.Format(@"{0}-patch.xml", xmlSrcFileName));
 
 					XElement storedAssemblies = XElement.Load(xmlSrc);
 
-					string defaultName = Path.ChangeExtension(xmlSrc, null);
-					string defaultReportFile = Path.GetFullPath(String.Format(@"{0}-report.xml", defaultName));
-					string defaultResultsFile = Path.GetFullPath(String.Format(@"{0}-results.xml", defaultName));
-					string defaultIgnoreListFile = Path.GetFullPath(String.Format(@"{0}-patch.xml", defaultName));
+					patchFile = String.IsNullOrEmpty(patchFile)
+										? defaultPatchFile
+										: patchFile.Substring("patch:".Length);
 
-					ignoreListFile = String.IsNullOrEmpty(ignoreListFile)
-										? defaultIgnoreListFile
-										: ignoreListFile.Substring("patch:".Length);
-
-					if (File.Exists(ignoreListFile))
+					if (File.Exists(patchFile))
 					{
-						XElement xmlPatch = XElement.Load(ignoreListFile);
+						XElement xmlPatch = XElement.Load(patchFile);
 						ApplyPatch(storedAssemblies, xmlPatch);
 					}
 
 					CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
 					GenerateReport(storedAssemblies);
+					storedAssemblies.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 
-					XElement report = storedAssemblies;
-
-					storedAssemblies.ProperSave(String.IsNullOrEmpty(resultsFile) ? defaultResultsFile : resultsFile.Substring("report:".Length));
-					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("results:".Length));
-
-					if (report.HasElements)
+					if (storedAssemblies.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
 
-						foreach (XElement problem in report.Elements())
+						foreach (XElement problem in storedAssemblies.Elements())
 						{
 							Console.WriteLine(String.Format("{0} {1}", problem.Name, String.Join(" ", problem.Attributes().Select(a => a.ToString()))));
 						}
@@ -124,7 +118,6 @@ namespace checker
 			Console.WriteLine("Options are for checking only.");
 			Console.WriteLine("patch:file.xml - path to patch file. Default is %dump%-patch.xml");
 			Console.WriteLine("report:file.xml - path to report file. Default is %dump%-report.xml");
-			Console.WriteLine("results:file.xml - path to results file. Default is %dump%-results.xml");
 			Console.WriteLine("Where %dump% - is a full name of dump file without extension");
 		}
 
@@ -328,7 +321,7 @@ namespace checker
 
 				foreach (XElement member in type.Elements().Where(t => !IsUntouchable(t)))
 				{
-					if (!analogInSecond.Elements().Any(m => AreCompatible(member, m)))
+					if (!analogInSecond.Elements(member.Name.LocalName).Any(m => AreCompatible(member, m)))
 					{
 						member.SetAttributeValue("Compatible", "false");
 					}
@@ -381,8 +374,7 @@ namespace checker
 			{
 				return false;
 			}
-
-			if (first.Element("Parameters") != null)
+			else if (first.Element("Parameters") != null)
 			{
 				IEnumerable<string> params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
 				IEnumerable<string> params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
