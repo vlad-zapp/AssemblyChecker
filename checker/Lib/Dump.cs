@@ -159,10 +159,13 @@ namespace AsmChecker
 			if (patch == null)
 				return;
 
-			foreach (XAttribute attribute in patch.Attributes())
-			{
-				source.SetAttributeValue(attribute.Name, attribute.Value);
-			}
+			//not needed now
+			//foreach (XAttribute attribute in patch.Attributes())
+			//{
+			//    source.SetAttributeValue(attribute.Name, attribute.Value);
+			//}
+
+			source.SetAttributeValue("Compatible",patch.GetValue("Compatible"));
 
 			foreach (XElement element in source.Elements())
 			{
