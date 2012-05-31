@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace AsmChecker.ReportViewer
@@ -16,7 +13,15 @@ namespace AsmChecker.ReportViewer
 		public MainWindow(string filePath)
 		{
 			InitializeComponent();
-			BuildTree(treeView1,XDocument.Load(filePath));
+			try
+			{
+				BuildTree(treeView1, XDocument.Load(filePath));
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show(e.Message,"Error",MessageBoxButton.OK,MessageBoxImage.Error);
+				App.Current.Shutdown();
+			}
 		}
 
 		private void BuildTree(TreeView treeView, XDocument doc)
@@ -33,55 +38,12 @@ namespace AsmChecker.ReportViewer
 
 		private void BuildNodes(TreeViewItem treeNode, XElement element)
 		{
-			foreach (XNode child in element.Nodes())
+			foreach (XElement childElement in element.Elements())
 			{
-				switch (child.NodeType)
-				{
-					case XmlNodeType.Element:
-						XElement childElement = child as XElement;
-						TreeViewItem childTreeNode = new TreeViewItem();
-						treeNode.Items.Add(childTreeNode);
-
-						var textItem = new TextBlock {Text = childElement.Name + " " + childElement.Attribute("Name") + " "
-							+string.Join(" ",childElement.Attributes().Where(a=>a.Name!="Name" /*&& a.Name!="Compatible"*/).Select(m=>m.ToString()))};
-
-						if (Compatible(childElement,"false")==true)
-						{
-							textItem.Foreground = new SolidColorBrush(Colors.DarkRed);
-							ExpandTo(childTreeNode);
-						} 
-						else if(Compatible(childElement,"true")==true)
-						{
-							textItem.Foreground = new SolidColorBrush(Colors.Green);
-						}
-
-						childTreeNode.Header = textItem;
-						BuildNodes(childTreeNode, childElement);
-						break;
-				}
+				TreeViewItem childTreeNode = new AsmCheckerNode(element);
+				treeNode.Items.Add(childTreeNode);
+				BuildNodes(childTreeNode, childElement);
 			}
-		}
-
-		private void ExpandTo(TreeViewItem childTreeNode)
-		{
-			var parent = (childTreeNode.Parent as TreeViewItem);
-			if(parent!=null)
-			{
-				parent.IsExpanded = true;
-				ExpandTo(parent);
-			}
-		}
-
-		private bool? Compatible(XElement node, string value)
-		{
-			if (node.Attribute("Compatible") != null)
-				return node.Attribute("Compatible").Value.ToLowerInvariant() == value.ToLowerInvariant();
-
-			//if (node.Parent != null) 
-			//	return Compatible(node.Parent, value);
-			
-			//return false;
-			return null;
 		}
 	}
 }
