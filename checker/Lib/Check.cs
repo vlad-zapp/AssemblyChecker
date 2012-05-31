@@ -50,7 +50,12 @@ namespace AsmChecker
 		//One generic compatibility check for all. Needed for reports and stuff
 		public static bool AreCompatible(XElement first, XElement second)
 		{
-			bool compatible =
+			//get method parameters 
+			IEnumerable<string> params1 = first.Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
+			IEnumerable<string> params2 = second.Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
+				
+			//TODO: optimization?
+			return
 				//whatever: check tag names 
 				first.Name.LocalName == second.Name.LocalName &&
 				//whatever: check names 
@@ -67,37 +72,12 @@ namespace AsmChecker
 				first.GetValue("Virtual") == second.GetValue("Virtual") &&
 				//methods: override
 				first.GetValue("Override") == second.GetValue("Override") &&
-				//properties: getter and setter 
-				!(first.GetValue("Getter") == "public" && first.GetValue("Getter") != second.GetValue("Getter")) &&
-				!(first.GetValue("Setter") == "public" && first.GetValue("Setter") != second.GetValue("Setter")) &&
 				//enums: check value
-				first.GetValue("Value") == second.GetValue("Value");
-
-			if (!compatible)
-			{
-				return false;
-			}
-
-			//methods: check parameters
-			if (first.Element("Parameters") == null ^ second.Element("Parameters") == null)
-			{
-				return false;
-			}
-			else if (first.Element("Parameters") != null)
-			{
-				IEnumerable<string> params1 = first.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
-				IEnumerable<string> params2 = second.Element("Parameters").Elements("Parameter").Select(m => m.Attribute("Type").Value).ToArray();
-
-				return Enumerable.SequenceEqual(params1, params2);
-			}
-
-			//Check properties acessors
-			if (first.Name.LocalName == "Property" && second.Name.LocalName == "Property")
-			{
-				return first.Elements("Method").All(m => second.Elements("Method").Any(n => AreCompatible(m, n)));
-			}
-
-			return true;
+				first.GetValue("Value") == second.GetValue("Value") &&
+				//methods: check parameters		
+				Enumerable.SequenceEqual(params1, params2) &&
+				//Check properties acessors
+				first.Elements("Acessor").All(m => second.Elements("Acessor").Any(n => AreCompatible(m, n)));	
 		}
 
 		#endregion
