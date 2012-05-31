@@ -95,15 +95,11 @@ namespace AsmChecker
 					XElement report = Report.GenerateReport(storedAssemblies);
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 
-					if (storedAssemblies.HasElements)
+					if (report.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
-
-						foreach (XElement problem in storedAssemblies.Elements())
-						{
-							Console.WriteLine(String.Format("{0} {1}", problem.Name, String.Join(" ", problem.Attributes().Select(a => a.ToString()))));
-						}
+						Console.WriteLine(report);
 						return 1;
 					}
 					else
