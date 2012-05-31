@@ -4,6 +4,12 @@
         Title="MainWindow" Height="350" Width="525" SizeToContent="Width">
    
     <Grid>
-        <TreeView HorizontalAlignment="Stretch" Name="treeView1" />
+        <TreeView HorizontalAlignment="Stretch" Name="treeView1" >
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate>
+                    <TextBlock Text="hello"/>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
     </Grid>
 </Window>
