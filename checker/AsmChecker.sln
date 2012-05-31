@@ -1,11 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Checker", "Checker\Checker.csproj", "{773AA822-C252-498A-9CAE-2B527F8CD0ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmChecker", "Checker\AsmChecker.csproj", "{773AA822-C252-498A-9CAE-2B527F8CD0ED}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReportViewer", "ReportViewer\ReportViewer.csproj", "{6B2E4B70-D934-4776-82BA-A8A16CE48A0C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lib", "Lib\Lib.csproj", "{3A4DFE12-C269-429E-88E0-5031185A8D70}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsmCheckerLib", "Lib\AsmCheckerLib.csproj", "{3A4DFE12-C269-429E-88E0-5031185A8D70}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

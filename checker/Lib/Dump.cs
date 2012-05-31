@@ -134,7 +134,7 @@ namespace AsmChecker
 
 		public static XElement DumpMethod(MethodDefinition method)
 		{
-			XElement methodXml = new XElement("Method");
+			XElement methodXml = new XElement(method.IsGetter||method.IsSetter?"Acessor":"Method");
 			methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
@@ -143,15 +143,13 @@ namespace AsmChecker
 
 			if (method.HasParameters)
 			{
-				XElement paramsXml = new XElement("Parameters");
 				foreach (ParameterDefinition parameter in method.Parameters)
 				{
 					XElement paramXml = new XElement("Parameter");
 					paramXml.SetAttributeValue("Name", parameter.Name);
 					paramXml.SetAttributeValue("Type", parameter.ParameterType);
-					paramsXml.Add(paramXml);
+					methodXml.Add(paramXml);
 				}
-				methodXml.Add(paramsXml);
 			}
 			return methodXml;
 		}
@@ -161,10 +159,13 @@ namespace AsmChecker
 			if (patch == null)
 				return;
 
-			foreach (XAttribute attribute in patch.Attributes())
-			{
-				source.SetAttributeValue(attribute.Name, attribute.Value);
-			}
+			//not needed now
+			//foreach (XAttribute attribute in patch.Attributes())
+			//{
+			//    source.SetAttributeValue(attribute.Name, attribute.Value);
+			//}
+
+			source.SetAttributeValue("Compatible",patch.GetValue("Compatible"));
 
 			foreach (XElement element in source.Elements())
 			{

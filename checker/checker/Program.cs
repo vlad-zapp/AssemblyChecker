@@ -47,7 +47,7 @@ namespace AsmChecker
 				//TODO: improve detection of dirs
 				List<string> files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
 				IEnumerable<string> dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
-				string xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
+				string xmlSrc = args.FirstOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
 
 				foreach (string dir in dirs)
 				{
@@ -95,15 +95,11 @@ namespace AsmChecker
 					XElement report = Report.GenerateReport(storedAssemblies);
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 
-					if (storedAssemblies.HasElements)
+					if (report.HasElements)
 					{
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
-
-						foreach (XElement problem in storedAssemblies.Elements())
-						{
-							Console.WriteLine(String.Format("{0} {1}", problem.Name, String.Join(" ", problem.Attributes().Select(a => a.ToString()))));
-						}
+						Console.WriteLine(report);
 						return 1;
 					}
 					else
