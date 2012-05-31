@@ -47,7 +47,7 @@ namespace AsmChecker
 				//TODO: improve detection of dirs
 				List<string> files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
 				IEnumerable<string> dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
-				string xmlSrc = args.SingleOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
+				string xmlSrc = args.FirstOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
 
 				foreach (string dir in dirs)
 				{
