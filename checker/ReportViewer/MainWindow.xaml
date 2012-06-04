@@ -6,9 +6,9 @@
     <Grid>
         <TreeView HorizontalAlignment="Stretch" Name="treeView1" >
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate>
-                    <TextBlock Text="hello"/>
-                </HierarchicalDataTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding}"></TextBlock>
+                </DataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>
     </Grid>

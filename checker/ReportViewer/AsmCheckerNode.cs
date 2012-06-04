@@ -28,20 +28,6 @@ namespace AsmChecker.ReportViewer
 			{
 				Compatible = null;
 			}
-
-			//var textItem = new TextBlock { Text = Type + " " + Name };
-
-			//if (Compatible == false)
-			//{
-			//    textItem.Foreground = new SolidColorBrush(Colors.DarkRed);
-			//}
-			//else if (Compatible == true)
-			//{
-			//    textItem.Foreground = new SolidColorBrush(Colors.Green);
-			//}
-
-			//Header = textItem;
-
 		}
 	}
 }

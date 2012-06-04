@@ -2,6 +2,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Xml.Linq;
+using System.Linq;
 
 namespace AsmChecker.ReportViewer
 {
@@ -15,7 +16,8 @@ namespace AsmChecker.ReportViewer
 			InitializeComponent();
 			try
 			{
-				BuildTree(treeView1, XDocument.Load(filePath));
+				BuildTree(treeView1, XElement.Load(filePath));
+				treeView1.Items.Add("asd");
 			}
 			catch (Exception e)
 			{
@@ -24,26 +26,9 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
-		private void BuildTree(TreeView treeView, XDocument doc)
+		private void BuildTree(TreeView treeView, XElement xml)
 		{
-			TreeViewItem treeNode = new TreeViewItem
-			{
-				//Should be Root
-				Header = doc.Root.Name.LocalName,
-				IsExpanded = true
-			};
-			treeView.Items.Add(treeNode);
-			BuildNodes(treeNode, doc.Root);
-		}
-
-		private void BuildNodes(TreeViewItem treeNode, XElement element)
-		{
-			foreach (XElement childElement in element.Elements())
-			{
-				TreeViewItem childTreeNode = new AsmCheckerNode(element);
-				treeNode.Items.Add(childTreeNode);
-				BuildNodes(childTreeNode, childElement);
-			}
+			xml.Elements().Select(e => treeView.Items.Add(e.ToString()));
 		}
 	}
 }
