@@ -33,6 +33,24 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
+		private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+		{
+			XElement item = (sender as TreeView).SelectedItem as XElement;
+			if (item == null)
+			{
+				infoPanel.Width = new GridLength(0);
+				return;
+			}
+			
+			Type.Content = item.Name.LocalName;
+			Name.Text = item.GetValue("Name",false);
+			attributesGrid.ItemsSource=item.Attributes();
+			if(infoPanel.Width==new GridLength(0))
+			{
+				infoPanel.Width = new GridLength(200);
+			}
+		}
+
 		#region Context menu and TreeView right click handling
 
 		private void MenuItemClick(object sender, RoutedEventArgs e)
@@ -43,6 +61,7 @@ namespace AsmChecker.ReportViewer
 				return;
 
 			item.SetAttributeValue("Compatible",item.GetValue("Compatible")!="true"?"true":null);
+			DataChanged = true;
 		}
 
 		private void ContextMenu_Opened(object sender, RoutedEventArgs e)
@@ -58,7 +77,6 @@ namespace AsmChecker.ReportViewer
 		{
 			if (sender is TreeViewItem)
 			{
-				DataChanged = true;
 				(sender as TreeViewItem).IsSelected = true;
 				e.Handled = true;
 			}

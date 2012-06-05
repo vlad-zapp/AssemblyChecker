@@ -101,10 +101,10 @@
 
 	<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 		<Grid.ColumnDefinitions>
-			<ColumnDefinition Width="*"></ColumnDefinition>
-			<ColumnDefinition Width="200" MinWidth="200"></ColumnDefinition>
+			<ColumnDefinition></ColumnDefinition>
+			<ColumnDefinition Width="0" Name="infoPanel"></ColumnDefinition>
 		</Grid.ColumnDefinitions>
-		<TreeView Grid.Column="0" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="treeView1_MouseRightButtonDown">
+		<TreeView Grid.Column="0" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="treeView1_MouseRightButtonDown" SelectedItemChanged="treeView1_SelectedItemChanged">
 			<TreeView.ItemContainerStyle>
 				<Style TargetType="TreeViewItem">
 					<EventSetter Event="TreeViewItem.MouseRightButtonDown" Handler="treeView1_MouseRightButtonDown"/>
@@ -112,6 +112,28 @@
 			</TreeView.ItemContainerStyle>
 		</TreeView>
 		<GridSplitter Grid.Column="0" Width="2"/>
-		<DataGrid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Column="1" HeadersVisibility="None" x:Name="dataGrid" />
+		<Border Grid.Column="1" BorderBrush="Black" BorderThickness="1">
+			<Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto"></RowDefinition>
+					<RowDefinition Height="Auto"></RowDefinition>
+					<RowDefinition></RowDefinition>
+				</Grid.RowDefinitions>
+				<Label Grid.Row="0" Name="Type" Content="Type" VerticalAlignment="Top" Width="180" FontWeight="Bold" HorizontalContentAlignment="Center" FontSize="18"/>
+				<TextBlock Grid.Row="1" Name="Name" TextAlignment="Center" VerticalAlignment="Top" Width="Auto" TextWrapping="Wrap"/>
+				<DataGrid Margin="3,15,3,3" Grid.Row="2" Name="attributesGrid" HeadersVisibility="None" AutoGenerateColumns="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+					<DataGrid.Columns>
+						<DataGridTextColumn Binding="{Binding Name}" Width="Auto"></DataGridTextColumn>
+						<DataGridTemplateColumn Width="*">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<TextBlock TextWrapping="Wrap" Text="{Binding Value}" />
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+					</DataGrid.Columns>
+				</DataGrid>
+			</Grid>
+		</Border>
 	</Grid>
 </Window>
