@@ -15,18 +15,16 @@ namespace AsmChecker.ReportViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		public MainWindow(string filePath)
+		public bool DataChanged = false;
+
+		public MainWindow(XElement dump, XElement report, XElement patch)
 		{
 			InitializeComponent();
 			try
 			{
-				XElement xml = XElement.Load(filePath);
-
-				Dump.ApplyPatch(xml, XElement.Load(Path.ChangeExtension(filePath,null)+"-report.xml"));
-
-				treeView1.ItemsSource = xml.Elements();
-
-
+				Dump.ApplyPatch(dump, report);
+				Dump.ApplyPatch(dump, patch);
+				treeView1.ItemsSource = dump.Elements();
 			}
 			catch (Exception e)
 			{
@@ -35,5 +33,36 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
+		#region Context menu and TreeView right click handling
+
+		private void MenuItemClick(object sender, RoutedEventArgs e)
+		{
+			XElement item = (treeView1.SelectedItem as XElement);
+
+			if (item == null)
+				return;
+
+			item.SetAttributeValue("Compatible",item.GetValue("Compatible")!="true"?"true":null);
+		}
+
+		private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+		{
+			if (treeView1.SelectedItem == null)
+				return;
+
+			((sender as ContextMenu).Items[0] as MenuItem).IsChecked =
+				(treeView1.SelectedItem as XElement).GetValue("Compatible") == "true";
+		}
+
+		private void treeView1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		{
+			if (sender is TreeViewItem)
+			{
+				DataChanged = true;
+				(sender as TreeViewItem).IsSelected = true;
+				e.Handled = true;
+			}
+		}
+		#endregion
 	}
 }

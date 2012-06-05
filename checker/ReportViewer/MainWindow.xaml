@@ -6,35 +6,50 @@
 	<Window.Resources>
 
 		<HierarchicalDataTemplate ItemsSource="{Binding Elements}" x:Key="ViewEditTreeTemplate">
-
 			<StackPanel Orientation="Horizontal" x:Name="panel">
 				<Image Width="16" Height="16" HorizontalAlignment="Left" x:Name="image" />
 				<TextBlock Margin="5,0,0,0" Text="{Binding Path=Attribute[Name].Value}" x:Name="textBlock"/>
-				<!--StackPanel.ToolTip>
+				<!--<StackPanel.ToolTip>
 					<Grid>
-						<Grid.ColumnDefinitions>
-							<ColumnDefinition></ColumnDefinition>
-							<ColumnDefinition></ColumnDefinition>
-						</Grid.ColumnDefinitions>
-
 						<Grid.RowDefinitions>
 							<RowDefinition x:Name="Path_row"></RowDefinition>
 							<RowDefinition x:Name="Type_row"></RowDefinition>
-							<RowDefinition  x:Name="ReturnType_row"></RowDefinition>
-							<RowDefinition></RowDefinition>
+							<RowDefinition x:Name="ReturnType_row"></RowDefinition>
+							<RowDefinition x:Name="Compatible_row"></RowDefinition>
 							<RowDefinition></RowDefinition>
 						</Grid.RowDefinitions>
 
-						<Label Margin="0" Grid.Row="0" Grid.Column="0">Path</Label>
-						<Label Grid.Row="1" Grid.Column="0">Type</Label>
-						<Label Grid.Row="2" Grid.Column="0">ReturnType</Label>
+						<StackPanel Orientation="Horizontal" Grid.Row="0">
+							<TextBlock Text="Path" Margin="0,0,7,0"/>
+							<TextBlock Text="{Binding Attribute[Path].Value}"/>
+						</StackPanel>
 
-						<TextBlock Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding Attribute[Path].Value}"/>
-						<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Attribute[Type].Value}"/>
-						<TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Attribute[ReturnType].Value}"/>
+						<StackPanel Orientation="Horizontal" Grid.Row="1">
+							<TextBlock Text="Type" Margin="0,0,7,0"/>
+							<TextBlock Text="{Binding Attribute[Type].Value}"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Grid.Row="2">
+							<TextBlock Text="ReturnType" Margin="0,0,7,0"/>
+							<TextBlock Text="{Binding Attribute[ReturnType].Value}"/>
+						</StackPanel>
+
+						<StackPanel Orientation="Horizontal" Grid.Row="3">
+							<TextBlock Text="Compatible" Margin="0,0,7,0"/>
+							<TextBlock x:Name="Compatible_text"/>
+						</StackPanel>
+
 
 					</Grid>
-				</StackPanel.ToolTip-->
+				</StackPanel.ToolTip>-->
+
+				<StackPanel.ContextMenu>
+					<ContextMenu Opened="ContextMenu_Opened">
+						<MenuItem Click="MenuItemClick" Header="Ignore" IsCheckable="True" x:Name="menuItem"></MenuItem>
+						<MenuItem Header="Change"></MenuItem>
+					</ContextMenu>
+				</StackPanel.ContextMenu>
+
 			</StackPanel>
 
 			<HierarchicalDataTemplate.Triggers>
@@ -43,7 +58,7 @@
 				</DataTrigger>
 
 				<DataTrigger Binding="{Binding Path=Attribute[Compatible].Value}" Value="true">
-					<Setter TargetName="textBlock" Property="Foreground" Value="LawnGreen"/>
+					<Setter TargetName="textBlock" Property="Foreground" Value="Green"/>
 				</DataTrigger>
 
 				<DataTrigger Binding="{Binding Name.LocalName}" Value="CompatibilityInfo">
@@ -82,7 +97,6 @@
 				</DataTrigger>
 			</HierarchicalDataTemplate.Triggers>
 		</HierarchicalDataTemplate>
-
 	</Window.Resources>
 
 	<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
@@ -90,10 +104,14 @@
 			<ColumnDefinition Width="*"></ColumnDefinition>
 			<ColumnDefinition Width="200" MinWidth="200"></ColumnDefinition>
 		</Grid.ColumnDefinitions>
-		<TreeView Grid.Column="0" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}"></TreeView>
+		<TreeView Grid.Column="0" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="treeView1_MouseRightButtonDown">
+			<TreeView.ItemContainerStyle>
+				<Style TargetType="TreeViewItem">
+					<EventSetter Event="TreeViewItem.MouseRightButtonDown" Handler="treeView1_MouseRightButtonDown"/>
+				</Style>
+			</TreeView.ItemContainerStyle>
+		</TreeView>
 		<GridSplitter Grid.Column="0" Width="2"/>
-		<DataGrid Grid.Column="1" DataContext="{Binding ElementName=treeView1, Path=SelectedItem}" HeadersVisibility="None">
-
-		</DataGrid>
+		<DataGrid HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Column="1" HeadersVisibility="None" x:Name="dataGrid" />
 	</Grid>
 </Window>
