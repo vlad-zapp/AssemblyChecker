@@ -76,8 +76,8 @@ namespace AsmChecker
 				first.GetValue("Value") == second.GetValue("Value") &&
 				//methods: check parameters		
 				Enumerable.SequenceEqual(params1, params2) &&
-				//Check properties acessors
-				first.Elements("Acessor").All(m => second.Elements("Acessor").Any(n => AreCompatible(m, n)));	
+				//Check properties Accessors
+				first.Elements("Accessor").All(m => second.Elements("Accessor").Any(n => AreCompatible(m, n)));	
 		}
 
 		#endregion

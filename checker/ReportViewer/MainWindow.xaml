@@ -5,10 +5,54 @@
 
     <Window.Resources>
         <DataTemplate x:Key="header_template">
+
             <StackPanel Orientation="Horizontal">
-                <Image Source="{Binding Path=TypeImage}" Width="16" Height="16" HorizontalAlignment="Left"></Image>
-                <TextBlock Margin="5,0,0,0" Text="{Binding Path=Name}"></TextBlock>
+                <Image Width="16" Height="16" HorizontalAlignment="Left" x:Name="image" />
+                <TextBlock Margin="5,0,0,0" Text="{Binding Path=Name}" x:Name="textBlock"/>
             </StackPanel>
+
+            <DataTemplate.Triggers>
+                
+                <DataTrigger Binding="{Binding Compatible}" Value="false">
+                    <Setter TargetName="textBlock" Property="Foreground" Value="Red"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding Compatible}" Value="true">
+                    <Setter TargetName="textBlock" Property="Foreground" Value="LawnGreen"/>
+                </DataTrigger>
+
+                <DataTrigger Binding="{Binding Type}" Value="CompatibilityInfo">
+                    <Setter TargetName="image" Property="Source" Value="Images\Info.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Assembly">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Assembly.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Class">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Class.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Struct">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Structure.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Interface">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Interface.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Enum">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Enum.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Method">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Accessor">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Property">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Properties.png"/>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding Type}" Value="Field">
+                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Field.png"/>
+                </DataTrigger>
+
+            </DataTemplate.Triggers>
         </DataTemplate>
     </Window.Resources>
 

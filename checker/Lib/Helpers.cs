@@ -39,12 +39,14 @@ namespace AsmChecker
 			}
 		}
 
-		public static string GetValue(this XElement self, string attributeName)
+		public static string GetValue(this XElement self, string attributeName, bool toLower = true)
 		{
 			if (self.Attribute(attributeName) == null)
 				return null;
 
-			return self.Attribute(attributeName).Value.ToLowerInvariant();
+			return toLower ?
+				self.Attribute(attributeName).Value.ToLowerInvariant() :
+				self.Attribute(attributeName).Value;
 		}
 
 		public static IEnumerable<XElement> SelectTypes(this XElement source)

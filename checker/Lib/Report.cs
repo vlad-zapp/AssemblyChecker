@@ -16,7 +16,7 @@ namespace AsmChecker
 		{
 			if (source.GetValue("Compatible") == "false")
 			{
-				source.Elements().Where(e => e.Name != "Parameter" && e.Name != "Acessor").Remove();
+				source.Elements().Where(e => e.Name != "Parameter" && e.Name != "Accessor").Remove();
 				return true;
 			}
 

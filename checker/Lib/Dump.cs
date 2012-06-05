@@ -134,7 +134,7 @@ namespace AsmChecker
 
 		public static XElement DumpMethod(MethodDefinition method)
 		{
-			XElement methodXml = new XElement(method.IsGetter||method.IsSetter?"Acessor":"Method");
+			XElement methodXml = new XElement(method.IsGetter||method.IsSetter?"Accessor":"Method");
 			methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
