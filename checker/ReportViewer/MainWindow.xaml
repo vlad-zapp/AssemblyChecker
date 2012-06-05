@@ -1,63 +1,99 @@
 ﻿<Window x:Class="AsmChecker.ReportViewer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Width="800" Height="600">
+        Title="ReportViewver" Width="800" Height="600">
 
-    <Window.Resources>
-        <DataTemplate x:Key="header_template">
+	<Window.Resources>
 
-            <StackPanel Orientation="Horizontal">
-                <Image Width="16" Height="16" HorizontalAlignment="Left" x:Name="image" />
-                <TextBlock Margin="5,0,0,0" Text="{Binding Path=Name}" x:Name="textBlock"/>
-            </StackPanel>
+		<HierarchicalDataTemplate ItemsSource="{Binding Elements}" x:Key="ViewEditTreeTemplate">
 
-            <DataTemplate.Triggers>
-                
-                <DataTrigger Binding="{Binding Compatible}" Value="false">
-                    <Setter TargetName="textBlock" Property="Foreground" Value="Red"/>
-                </DataTrigger>
+			<StackPanel Orientation="Horizontal" x:Name="panel">
+				<Image Width="16" Height="16" HorizontalAlignment="Left" x:Name="image" />
+				<TextBlock Margin="5,0,0,0" Text="{Binding Path=Attribute[Name].Value}" x:Name="textBlock"/>
+				<!--StackPanel.ToolTip>
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition></ColumnDefinition>
+							<ColumnDefinition></ColumnDefinition>
+						</Grid.ColumnDefinitions>
 
-                <DataTrigger Binding="{Binding Compatible}" Value="true">
-                    <Setter TargetName="textBlock" Property="Foreground" Value="LawnGreen"/>
-                </DataTrigger>
+						<Grid.RowDefinitions>
+							<RowDefinition x:Name="Path_row"></RowDefinition>
+							<RowDefinition x:Name="Type_row"></RowDefinition>
+							<RowDefinition  x:Name="ReturnType_row"></RowDefinition>
+							<RowDefinition></RowDefinition>
+							<RowDefinition></RowDefinition>
+						</Grid.RowDefinitions>
 
-                <DataTrigger Binding="{Binding Type}" Value="CompatibilityInfo">
-                    <Setter TargetName="image" Property="Source" Value="Images\Info.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Assembly">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Assembly.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Class">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Class.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Struct">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Structure.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Interface">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Interface.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Enum">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Enum.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Method">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Accessor">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Property">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Properties.png"/>
-                </DataTrigger>
-                <DataTrigger Binding="{Binding Type}" Value="Field">
-                    <Setter TargetName="image" Property="Source" Value="Images\VSObject_Field.png"/>
-                </DataTrigger>
+						<Label Margin="0" Grid.Row="0" Grid.Column="0">Path</Label>
+						<Label Grid.Row="1" Grid.Column="0">Type</Label>
+						<Label Grid.Row="2" Grid.Column="0">ReturnType</Label>
 
-            </DataTemplate.Triggers>
-        </DataTemplate>
-    </Window.Resources>
+						<TextBlock Margin="0" Grid.Row="0" Grid.Column="1" Text="{Binding Attribute[Path].Value}"/>
+						<TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Attribute[Type].Value}"/>
+						<TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Attribute[ReturnType].Value}"/>
 
-    <Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-        <TreeView Name="treeView1">
-        </TreeView>
-    </Grid>
+					</Grid>
+				</StackPanel.ToolTip-->
+			</StackPanel>
+
+			<HierarchicalDataTemplate.Triggers>
+				<DataTrigger Binding="{Binding  Path=Attribute[Compatible].Value}" Value="false">
+					<Setter TargetName="textBlock" Property="Foreground" Value="Red"/>
+				</DataTrigger>
+
+				<DataTrigger Binding="{Binding Path=Attribute[Compatible].Value}" Value="true">
+					<Setter TargetName="textBlock" Property="Foreground" Value="LawnGreen"/>
+				</DataTrigger>
+
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="CompatibilityInfo">
+					<Setter TargetName="image" Property="Source" Value="Images\Info.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Assembly">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Assembly.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Class">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Class.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Struct">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Structure.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Interface">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Interface.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Enum">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Enum.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Method">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Accessor">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Method.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Property">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Properties.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Field">
+					<Setter TargetName="image" Property="Source" Value="Images\VSObject_Field.png"/>
+				</DataTrigger>
+				<DataTrigger Binding="{Binding Name.LocalName}" Value="Parameter">
+					<Setter TargetName="textBlock" Property="Text" Value="{Binding Attribute[Type].Value}" />
+					<Setter TargetName="image" Property="Source" Value="Images\Parameter.png"/>
+				</DataTrigger>
+			</HierarchicalDataTemplate.Triggers>
+		</HierarchicalDataTemplate>
+
+	</Window.Resources>
+
+	<Grid VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="*"></ColumnDefinition>
+			<ColumnDefinition Width="200" MinWidth="200"></ColumnDefinition>
+		</Grid.ColumnDefinitions>
+		<TreeView Grid.Column="0" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}"></TreeView>
+		<GridSplitter Grid.Column="0" Width="2"/>
+		<DataGrid Grid.Column="1" DataContext="{Binding ElementName=treeView1, Path=SelectedItem}" HeadersVisibility="None">
+
+		</DataGrid>
+	</Grid>
 </Window>
