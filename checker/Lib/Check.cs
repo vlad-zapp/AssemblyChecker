@@ -62,6 +62,8 @@ namespace AsmChecker
 				first.GetValue("Name") == second.GetValue("Name") &&
 				//whatever: static or not
 				first.GetValue("Static") == second.GetValue("Static") &&
+				//classes: path
+				first.GetValue("Path") == second.GetValue("Path") &&
 				//classes: abstract or not
 				first.GetValue("Abstract") == second.GetValue("Abstract") &&
 				//fields&properties: check type

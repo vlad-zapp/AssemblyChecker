@@ -29,9 +29,9 @@ namespace AsmChecker.ReportViewer
 				showPatch.IsChecked = false;
 				showReport.IsChecked = false;
 
-				Dump.ApplyPatch(dump, report);
-				Dump.ApplyPatch(dump, patch);
-				treeView1.ItemsSource = new List<XElement> { dump };
+				Dump.ApplyPatch(DumpXml, report);
+				Dump.ApplyPatch(DumpXml, patch);
+				treeView1.ItemsSource = new List<XElement> { DumpXml };
 			}
 			catch (Exception e)
 			{
@@ -44,7 +44,8 @@ namespace AsmChecker.ReportViewer
 		{
 			var oldsrc = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
 			treeView1.ItemsSource = new List<XElement> { DumpXml };
-			Dump.ApplyPatch((treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault(),oldsrc);
+			Dump.ApplyPatch((treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault(), oldsrc);
+
 			var t = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
 
 			if (showPatch.IsChecked)
@@ -55,7 +56,6 @@ namespace AsmChecker.ReportViewer
 			{
 				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(t, false) };
 			}
-
 		}
 
 		private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)

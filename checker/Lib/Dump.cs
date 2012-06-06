@@ -170,8 +170,16 @@ namespace AsmChecker
 
 			foreach (XElement element in source.Elements().ExceptAccessorsAndParameters())
 			{
-				ApplyPatch(element, patch.Elements(element.Name.LocalName).
-					ExceptAccessorsAndParameters().SingleOrDefault(e => Check.AreCompatible(element, e)));
+				var dbg = patch.Elements(element.Name.LocalName).
+					ExceptAccessorsAndParameters().Where(e => Check.AreCompatible(element, e));
+				try
+				{
+					ApplyPatch(element, patch.Elements(element.Name.LocalName).
+					                    	ExceptAccessorsAndParameters().SingleOrDefault(e => Check.AreCompatible(element, e)));
+				}
+				catch (Exception e)
+				{
+				}
 			}
 		}
 	}

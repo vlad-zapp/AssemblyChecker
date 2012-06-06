@@ -58,7 +58,7 @@ namespace AsmChecker
 		public static IEnumerable<XElement> ExceptAccessorsAndParameters(this IEnumerable<XElement> source)
 		{
 			IEnumerable<string> filter = new[] { "Accessor", "Parameter" };
-			return source.Where(s => filter.Contains(s.Name.LocalName));
+			return source.Where(s => !filter.Contains(s.Name.LocalName));
 		}
 	}
 }
