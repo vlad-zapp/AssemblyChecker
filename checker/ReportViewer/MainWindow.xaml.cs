@@ -1,11 +1,11 @@
 ﻿using System;
-using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.Win32;
 
 namespace AsmChecker.ReportViewer
 {
@@ -14,51 +14,23 @@ namespace AsmChecker.ReportViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		public bool DataChanged = false;
-		public XElement DumpXml;
+		public bool dumpChanged = false;
+		public bool patchChanged = false;
+		public bool reportChanged = false;
 
-		public MainWindow(XElement dump, XElement report, XElement patch)
+		private string dumpFile, reportFile, patchFile;
+
+		private XElement DumpXml;
+
+		public MainWindow(string dumpFile, string reportFile, string patchFile)
 		{
 			InitializeComponent();
-			try
-			{
-				DumpXml = dump;
-
-				//variables setup
-				showDump.IsChecked = true;
-				showPatch.IsChecked = false;
-				showReport.IsChecked = false;
-
-				Dump.ApplyPatch(DumpXml, report);
-				Dump.ApplyPatch(DumpXml, patch);
-				treeView1.ItemsSource = new List<XElement> { DumpXml };
-			}
-			catch (Exception e)
-			{
-				MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-				App.Current.Shutdown();
-			}
+			LoadTree(dumpFile, patchFile, reportFile);
 		}
 
-		private void UpdateTree()
-		{
-			var oldsrc = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
-			treeView1.ItemsSource = new List<XElement> { DumpXml };
-			Dump.ApplyPatch((treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault(), oldsrc);
+		#region TreeView
 
-			var t = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
-
-			if (showPatch.IsChecked)
-			{
-				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(t, true) };
-			}
-			else if (showReport.IsChecked)
-			{
-				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(t, false) };
-			}
-		}
-
-		private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+		private void TreeViewSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
 		{
 			XElement item = (sender as TreeView).SelectedItem as XElement;
 			if (item == null)
@@ -76,23 +48,76 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
-		private void MenuItem_Checked(object sender, RoutedEventArgs e)
+		private void LoadTree(string dumpFile, string reportFile, string patchFile)
 		{
-			showDump.IsChecked = false;
-			showReport.IsChecked = false;
-			showPatch.IsChecked = false;
-
-			MenuItem senderItem = (sender as MenuItem);
-			if (senderItem == null)
+			try
 			{
-				return;
-			}
+				if (!File.Exists(dumpFile))
+				{
+					return;
+				}
+				
+				DumpXml = XElement.Load(dumpFile);
+				this.dumpFile = dumpFile;
 
-			senderItem.IsChecked = true;
-			UpdateTree();
+				if (File.Exists(reportFile))
+				{
+					XElement inputReport = XElement.Load(reportFile);
+					Dump.ApplyPatch(DumpXml, inputReport);
+					this.reportFile = reportFile;
+				}
+
+				if (File.Exists(patchFile))
+				{
+					XElement inputPatch = XElement.Load(patchFile);
+					Dump.ApplyPatch(DumpXml, inputPatch);
+					this.patchFile = patchFile;
+				}
+
+				//variables setup
+				showDump.IsChecked = true;
+				showPatch.IsChecked = false;
+				showReport.IsChecked = false;
+
+				treeView1.ItemsSource = new List<XElement> { DumpXml };
+			}
+			catch (Exception e)
+			{
+				MessageBox.Show(e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+				App.Current.Shutdown();
+			}
 		}
 
-		#region Context menu and TreeView right click handling
+		private void UpdateTree()
+		{
+			var oldsrc = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
+			treeView1.ItemsSource = new List<XElement> { DumpXml };
+			Dump.ApplyPatch((treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault(), oldsrc);
+
+			var fullDump = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
+
+			if (showPatch.IsChecked)
+			{
+				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(fullDump, true) };
+			}
+			else if (showReport.IsChecked)
+			{
+				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(fullDump, false) };
+			}
+		}
+
+		private void treeView1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		{
+			if (sender is TreeViewItem)
+			{
+				(sender as TreeViewItem).IsSelected = true;
+				e.Handled = true;
+			}
+		}
+
+		#endregion
+
+		#region Context menu
 
 		private void IgnoreItemClick(object sender, RoutedEventArgs e)
 		{
@@ -102,8 +127,8 @@ namespace AsmChecker.ReportViewer
 				return;
 
 			item.SetAttributeValue("Compatible", item.GetValue("Compatible") != "true" ? "true" : null);
-			treeView1_SelectedItemChanged(treeView1, null);
-			DataChanged = true;
+			TreeViewSelectedItemChanged(treeView1, null);
+			patchChanged = true;
 		}
 
 		private void DeleteItemClick(object sender, RoutedEventArgs e)
@@ -119,10 +144,13 @@ namespace AsmChecker.ReportViewer
 				item.Remove();
 			}
 
-			DataChanged = true;
+			if(showDump.IsChecked)
+			{
+				dumpChanged = true;
+			}
 		}
 
-		private void ContextMenu_Opened(object sender, RoutedEventArgs e)
+		private void ItemContextMenuOpened(object sender, RoutedEventArgs e)
 		{
 			if (treeView1.SelectedItem == null)
 				return;
@@ -131,14 +159,77 @@ namespace AsmChecker.ReportViewer
 				(treeView1.SelectedItem as XElement).GetValue("Compatible") == "true";
 		}
 
-		private void treeView1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		#endregion
+
+		#region Main menu
+
+		private void ShowOpenDialog(object sender, RoutedEventArgs e)
 		{
-			if (sender is TreeViewItem)
+			var dialog = new OpenDlgWindow();
+			dialog.ShowDialog();
+			LoadTree(dialog.Dump, dialog.Patch, dialog.Report);
+			dumpFile = dialog.Dump;
+			reportFile = dialog.Report;
+			patchFile = dialog.Patch;
+		}
+
+		private void ViewMenuItemChecked(object sender, RoutedEventArgs e)
+		{
+			showDump.IsChecked = false;
+			showReport.IsChecked = false;
+			showPatch.IsChecked = false;
+
+			MenuItem senderItem = (sender as MenuItem);
+			if (senderItem == null)
 			{
-				(sender as TreeViewItem).IsSelected = true;
-				e.Handled = true;
+				return;
+			}
+
+			senderItem.IsChecked = true;
+			deleteItem.IsEnabled = showDump.IsChecked;
+			UpdateTree();
+		}
+
+		private void CloseProgram(object sender, RoutedEventArgs e)
+		{
+			App.Current.Shutdown();
+		}
+
+		private void SaveDump(object sender, RoutedEventArgs e)
+		{
+			XElement dumpForSave = new XElement(DumpXml);
+			Dump.ClearPatches(dumpForSave);
+			dumpForSave.ProperSave(dumpFile);
+			dumpChanged = false;
+		}
+
+		private void SaveReport(object sender, RoutedEventArgs e)
+		{
+			if (!String.IsNullOrEmpty(reportFile))
+			{
+				Report.GenerateReport(DumpXml, false).ProperSave(reportFile);
+				reportChanged = false;
 			}
 		}
+
+		private void SavePatch(object sender, RoutedEventArgs e)
+		{
+			if (String.IsNullOrEmpty(patchFile))
+			{
+				patchFile = Path.ChangeExtension(dumpFile, null) + "-patch.xml";
+			}
+			Report.GenerateReport(DumpXml, true).ProperSave(patchFile);
+			patchChanged = false;
+		}
+
+		public void SaveAll(object sender, RoutedEventArgs e)
+		{
+			SaveDump(sender, e);
+			SavePatch(sender, e);
+			SaveReport(sender, e);
+		}
+
 		#endregion
+
 	}
 }

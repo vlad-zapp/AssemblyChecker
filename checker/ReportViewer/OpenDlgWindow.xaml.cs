@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 
 namespace AsmChecker
 {
@@ -56,7 +57,32 @@ namespace AsmChecker
 			Dump = dumpFile.Text;
 			Report = reportFile.Text;
 			Patch = patchFile.Text;
+			DialogResult = true;
 			Close();
+		}
+
+		private string openFileDialog()
+		{
+			OpenFileDialog dlg = new OpenFileDialog();
+			dlg.Filter = "xml files|*.xml";
+			dlg.Multiselect = false;
+			dlg.ShowDialog();
+			return dlg.FileName;
+		}
+
+		private void selectDumpFile_Click(object sender, RoutedEventArgs e)
+		{
+			dumpFile.Text = openFileDialog();
+		}
+
+		private void selectPatchFile_Click(object sender, RoutedEventArgs e)
+		{
+			patchFile.Text = openFileDialog();
+		}
+
+		private void selectReportFile_Click(object sender, RoutedEventArgs e)
+		{
+			reportFile.Text = openFileDialog();
 		}
 	}
 }

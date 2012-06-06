@@ -10,40 +10,6 @@
 			<StackPanel Orientation="Horizontal" x:Name="panel">
 				<Image Width="16" Height="16" HorizontalAlignment="Left" x:Name="image" />
 				<TextBlock Margin="5,0,5,0" Text="{Binding Path=Attribute[Name].Value}" x:Name="textBlock"/>
-				<!--<StackPanel.ToolTip>
-					<Grid>
-						<Grid.RowDefinitions>
-							<RowDefinition x:Name="Path_row"></RowDefinition>
-							<RowDefinition x:Name="Type_row"></RowDefinition>
-							<RowDefinition x:Name="ReturnType_row"></RowDefinition>
-							<RowDefinition x:Name="Compatible_row"></RowDefinition>
-							<RowDefinition></RowDefinition>
-						</Grid.RowDefinitions>
-
-						<StackPanel Orientation="Horizontal" Grid.Row="0">
-							<TextBlock Text="Path" Margin="0,0,7,0"/>
-							<TextBlock Text="{Binding Attribute[Path].Value}"/>
-						</StackPanel>
-
-						<StackPanel Orientation="Horizontal" Grid.Row="1">
-							<TextBlock Text="Type" Margin="0,0,7,0"/>
-							<TextBlock Text="{Binding Attribute[Type].Value}"/>
-						</StackPanel>
-
-						<StackPanel Orientation="Horizontal" Grid.Row="2">
-							<TextBlock Text="ReturnType" Margin="0,0,7,0"/>
-							<TextBlock Text="{Binding Attribute[ReturnType].Value}"/>
-						</StackPanel>
-
-						<StackPanel Orientation="Horizontal" Grid.Row="3">
-							<TextBlock Text="Compatible" Margin="0,0,7,0"/>
-							<TextBlock x:Name="Compatible_text"/>
-						</StackPanel>
-
-
-					</Grid>
-				</StackPanel.ToolTip>-->
-
 			</StackPanel>
 
 			<HierarchicalDataTemplate.Triggers>
@@ -103,7 +69,7 @@
 			<ColumnDefinition Width="0" Name="infoPanel"></ColumnDefinition>
 		</Grid.ColumnDefinitions>
 
-		<TreeView Margin="0,0,4,0" Grid.Column="0" Grid.Row="1" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="treeView1_MouseRightButtonDown" SelectedItemChanged="treeView1_SelectedItemChanged">
+		<TreeView Margin="0,0,4,0" Grid.Column="0" Grid.Row="1" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="treeView1_MouseRightButtonDown" SelectedItemChanged="TreeViewSelectedItemChanged">
 			<TreeView.ItemContainerStyle>
 				<Style TargetType="TreeViewItem">
 					<EventSetter Event="TreeViewItem.MouseRightButtonDown" Handler="treeView1_MouseRightButtonDown"/>
@@ -111,10 +77,10 @@
 			</TreeView.ItemContainerStyle>
 
 			<TreeView.ContextMenu>
-				<ContextMenu Opened="ContextMenu_Opened">
+				<ContextMenu Opened="ItemContextMenuOpened">
 					<MenuItem Click="IgnoreItemClick" Header="Ignore" IsCheckable="True" x:Name="menuItem"></MenuItem>
 					<MenuItem Click="DeleteItemClick" Header="Delete"></MenuItem>
-					<MenuItem Header="Change"></MenuItem>
+					<!--<MenuItem Header="Change"></MenuItem>-->
 				</ContextMenu>
 			</TreeView.ContextMenu>
 		</TreeView>
@@ -130,7 +96,6 @@
 				<TextBlock Grid.Row="1" Name="Name" TextAlignment="Center" VerticalAlignment="Top" Width="Auto" TextWrapping="Wrap"/>
 				<DataGrid Background="{Binding ElementName=border, Path=Background}" Margin="3,15,3,3" Grid.Row="2" Name="attributesGrid" HeadersVisibility="None" AutoGenerateColumns="False" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
 					<DataGrid.Columns>
-						<!--<DataGridTextColumn Binding="{Binding Name}" Width="Auto"></DataGridTextColumn>-->
 						<DataGridTemplateColumn Width="Auto">
 							<DataGridTemplateColumn.CellTemplate>
 								<DataTemplate>
@@ -151,27 +116,30 @@
 		</Border>
 		<Menu Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Top">
 			<MenuItem Header="File">
-				<MenuItem Header="Open"></MenuItem>
+				<MenuItem Header="Open" Click="ShowOpenDialog"></MenuItem>
 				<Separator></Separator>
-				<MenuItem Header="Save Dump"></MenuItem>
-				<MenuItem Header="Save Patch"></MenuItem>
-				<MenuItem Header="Save Report"></MenuItem>
-				<MenuItem Header="Save All"></MenuItem>
+				<MenuItem Header="Save Dump" Click="SaveDump"></MenuItem>
+				<MenuItem Header="Save Patch" Click="SavePatch"></MenuItem>
+				<MenuItem Header="Save Report" Click="SaveReport"></MenuItem>
+				<MenuItem Header="Save All" Click="SaveAll"></MenuItem>
 				<Separator></Separator>
-				<MenuItem Header="Exit"></MenuItem>
+				<MenuItem Header="Exit" Click="CloseProgram"></MenuItem>
 			</MenuItem>
 
 			<MenuItem Header="View" DataContext="{Binding ElementName=self}">
-				<MenuItem Header="Dump and results" Click="MenuItem_Checked" x:Name="showDump"></MenuItem>
-				<MenuItem Header="Patch only" Click="MenuItem_Checked" x:Name="showPatch" ></MenuItem>
-				<MenuItem Header="Report only" Click="MenuItem_Checked" x:Name="showReport"></MenuItem>
+				<MenuItem Header="Dump and results" Click="ViewMenuItemChecked" x:Name="showDump"></MenuItem>
+				<MenuItem Header="Patch only" Click="ViewMenuItemChecked" x:Name="showPatch" ></MenuItem>
+				<MenuItem Header="Report only" Click="ViewMenuItemChecked" x:Name="showReport"></MenuItem>
 			</MenuItem>
 
+			<!--
+			For the future:
 			<MenuItem Header="Action">
 				<MenuItem Header="Dump"></MenuItem>
 				<MenuItem Header="Check"></MenuItem>
 				<MenuItem Header="Merge patch"></MenuItem>
 			</MenuItem>
+			-->
 
 			<MenuItem Header="Help">
 				<MenuItem Header="About"></MenuItem>

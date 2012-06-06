@@ -1,7 +1,7 @@
 ﻿<Window x:Class="AsmChecker.OpenDlgWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="OpenDlgWindow" Height="190" Width="450">
+        Title="OpenDlgWindow" Height="190" Width="450" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Grid>
 		<Grid.ColumnDefinitions>
 			<ColumnDefinition Width="auto"></ColumnDefinition>
@@ -17,15 +17,15 @@
         
 		<TextBlock VerticalAlignment="Center" Text="Dump file" Grid.Row="0" Grid.Column="0"  Margin="5"></TextBlock>
 		<TextBox Name="dumpFile" TextChanged="TextBoxTextChanged" Width="Auto" Height="23" Grid.Row="0" Grid.Column="1" Margin="5"></TextBox>
-		<Button Name="selectDumpFile" Grid.Row="0" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5"></Button>
+		<Button Name="selectDumpFile" Grid.Row="0" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5" Click="selectDumpFile_Click"></Button>
 		
 		<TextBlock VerticalAlignment="Center" Text="Patch file" Grid.Row="1" Grid.Column="0"  Margin="5"></TextBlock>
 		<TextBox Name="patchFile" IsEnabled="False" Width="Auto" Height="23" Grid.Row="1" Grid.Column="1" Margin="5"></TextBox>
-		<Button Name="selectPatchFile" IsEnabled="false" Grid.Row="1" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5"></Button>
+		<Button Name="selectPatchFile" IsEnabled="false" Grid.Row="1" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5" Click="selectPatchFile_Click"></Button>
 
 		<TextBlock VerticalAlignment="Center" Text="Report file" Grid.Row="2" Grid.Column="0"  Margin="5"></TextBlock>
 		<TextBox Name="reportFile" IsEnabled="False" Width="Auto" Height="23" Grid.Row="2" Grid.Column="1" Margin="5"></TextBox>
-		<Button Name="selectReportFile" IsEnabled="False" Grid.Row="2" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5"></Button>
+		<Button Name="selectReportFile" IsEnabled="False" Grid.Row="2" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5" Click="selectReportFile_Click"></Button>
 		<CheckBox Content="Dump only" Grid.Row="3" Grid.Column="0" Margin="5,20,0,0"></CheckBox>
 		<StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Grid.ColumnSpan="2">
 			<Button Content="Open" Width="80" IsDefault="True" Margin="5" Click="ButtonClick"></Button>

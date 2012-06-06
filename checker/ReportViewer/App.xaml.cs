@@ -14,45 +14,44 @@ namespace AsmChecker.ReportViewer
 		{
 			base.OnStartup(e);
 
-			if (e.Args.Count()>0 && e.Args[0].EndsWith(".xml"))
+			MainWindow win;
+
+			//Start with commandline parameters
+			if (e.Args.Any() && e.Args[0].EndsWith(".xml"))
 			{
 				string fileName = Path.ChangeExtension(e.Args[0], null);
 				string reportFile = e.Args.Count() > 1 ? e.Args[1] : fileName + "-report.xml";
 				string patchFile = e.Args.Count() > 2 ? e.Args[2] : fileName + "-patch.xml";
+				win = new MainWindow(e.Args[0], patchFile, reportFile);
 
-				XElement inputReport=null,
-						 inputPatch=null,
-						 inputDump = XElement.Load(e.Args[0]);
-
-				if(File.Exists(reportFile))
+			}
+ 			//Start without parameters
+			else
+			{
+				OpenDlgWindow opendWin = new OpenDlgWindow();
+				while (!File.Exists(opendWin.Dump))
 				{
-					inputReport = XElement.Load(reportFile);
+					opendWin = new OpenDlgWindow();
+					bool? result = opendWin.ShowDialog();
+					if(result==false)
+					{
+						Shutdown();
+						return;
+					}
+	
 				}
-
-				if(File.Exists(patchFile))
-				{
-					inputPatch = XElement.Load(patchFile);
-				}
-
-				var win = new MainWindow(inputDump,inputReport,inputPatch);
-				win.ShowDialog();
-
-				if (win.DataChanged && MessageBox.Show("Save changes?","Something changed",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)
-				{
-					inputReport = Report.GenerateReport(win.DumpXml, false);
-					inputReport.Name = "Report";
-
-					inputPatch = Report.GenerateReport(win.DumpXml, true);
-					inputPatch.Name = "Patch";
-
-					Dump.ClearPatches(win.DumpXml);
-					win.DumpXml.ProperSave(e.Args[0]);
-					inputReport.ProperSave(reportFile);
-					inputPatch.ProperSave(patchFile);
-				}
+				win = new MainWindow(opendWin.Dump,opendWin.Patch,opendWin.Report);
 			}
 
-			this.Shutdown();
+			win.ShowDialog();
+
+			if ((win.dumpChanged || win.patchChanged || win.reportChanged) 
+				&& MessageBox.Show("Save changes?","Something changed",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)
+			{
+				win.SaveAll(null,null);			
+			}
+			
+			Shutdown();
 		}
 	}
 }
