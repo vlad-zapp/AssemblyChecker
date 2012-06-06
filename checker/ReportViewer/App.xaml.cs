@@ -24,9 +24,19 @@ namespace AsmChecker.ReportViewer
 				string reportFile = e.Args.Count() > 1 ? e.Args[1] : fileName + "-report.xml";
 				string patchFile = e.Args.Count() > 2 ? e.Args[2] : fileName + "-patch.xml";
 
-				XElement inputDump = XElement.Load(e.Args[0]);
-				XElement inputReport = XElement.Load(reportFile);
-				XElement inputPatch = XElement.Load(patchFile);
+				XElement inputReport=null,
+						 inputPatch=null,
+						 inputDump = XElement.Load(e.Args[0]);
+
+				if(File.Exists(reportFile))
+				{
+					inputReport = XElement.Load(reportFile);
+				}
+
+				if(File.Exists(patchFile))
+				{
+					inputPatch = XElement.Load(patchFile);
+				}
 
 				var win = new MainWindow(inputDump,inputReport,inputPatch);
 				win.ShowDialog();

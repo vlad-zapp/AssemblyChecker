@@ -5,16 +5,17 @@ namespace AsmChecker
 {
 	public static class Report
 	{
-		public static XElement GenerateReport(XElement source, bool compatibleValue = false)
+		public static XElement GenerateReport(XElement source, bool? compatibleValue = false)
 		{
 			XElement report = new XElement(source);
 			MakeReportNode(report, compatibleValue);
 			return report;
 		}
 
-		public static bool MakeReportNode(XElement source, bool compatibleValue=false)
+		public static bool MakeReportNode(XElement source, bool? compatibleValue=false)
 		{
-			if (source.GetValue("Compatible") == compatibleValue.ToString().ToLowerInvariant())
+			if ((source.GetValue("Compatible")!=null && compatibleValue==null) ||
+				(source.GetValue("Compatible") == compatibleValue.ToString().ToLowerInvariant()))
 			{
 				source.Elements().Where(e => e.Name != "Parameter" && e.Name != "Accessor").Remove();
 				return true;
