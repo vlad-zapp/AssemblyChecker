@@ -78,8 +78,8 @@
 
 			<TreeView.ContextMenu>
 				<ContextMenu Opened="ItemContextMenuOpened">
-					<MenuItem Click="IgnoreItemClick" Header="Ignore" IsCheckable="True" x:Name="menuItem"></MenuItem>
-					<MenuItem Click="DeleteItemClick" Header="Delete"></MenuItem>
+					<MenuItem Click="IgnoreItemClick" Header="Ignore" IsCheckable="True" x:Name="menuItem" />
+					<MenuItem Click="DeleteItemClick" Header="Delete" Name="deleteItem"/>
 					<!--<MenuItem Header="Change"></MenuItem>-->
 				</ContextMenu>
 			</TreeView.ContextMenu>
@@ -115,21 +115,40 @@
 			</Grid>
 		</Border>
 		<Menu Grid.Row="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" Height="Auto" VerticalAlignment="Top">
-			<MenuItem Header="File">
-				<MenuItem Header="Open" Click="ShowOpenDialog"></MenuItem>
+			<MenuItem Header="_File">
+				<MenuItem Header="_Open" Click="ShowOpenDialog">
+					<MenuItem.Icon>
+						<Image Width="16" Source="Images/OpenFolder.png"/>
+					</MenuItem.Icon>
+				</MenuItem>
 				<Separator></Separator>
-				<MenuItem Header="Save Dump" Click="SaveDump"></MenuItem>
-				<MenuItem Header="Save Patch" Click="SavePatch"></MenuItem>
-				<MenuItem Header="Save Report" Click="SaveReport"></MenuItem>
-				<MenuItem Header="Save All" Click="SaveAll"></MenuItem>
+				<MenuItem Header="Save _Dump" Click="SaveDump">
+					<MenuItem.Icon>
+						<Image Width="16" Source="Images/Save.png"/>
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="Save _Patch" Click="SavePatch">
+					<MenuItem.Icon>
+						<Image Width="16" Source="Images/Save.png"/>
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="Save _Report" Click="SaveReport">
+					<MenuItem.Icon>
+						<Image Width="16" Source="Images/Save.png"/>
+					</MenuItem.Icon>
+				</MenuItem>
+				<MenuItem Header="_Save All" Click="SaveAll">
+					<MenuItem.Icon>
+						<Image Source="Images/SaveAll.png"/>
+					</MenuItem.Icon></MenuItem>
 				<Separator></Separator>
-				<MenuItem Header="Exit" Click="CloseProgram"></MenuItem>
+				<MenuItem Header="E_xit" Click="CloseProgram"></MenuItem>
 			</MenuItem>
 
-			<MenuItem Header="View" DataContext="{Binding ElementName=self}">
-				<MenuItem Header="Dump and results" Click="ViewMenuItemChecked" x:Name="showDump"></MenuItem>
-				<MenuItem Header="Patch only" Click="ViewMenuItemChecked" x:Name="showPatch" ></MenuItem>
-				<MenuItem Header="Report only" Click="ViewMenuItemChecked" x:Name="showReport"></MenuItem>
+			<MenuItem Header="_View" DataContext="{Binding ElementName=self}">
+				<MenuItem Header="_Dump and results" Click="ViewMenuItemChecked" x:Name="showDump"></MenuItem>
+				<MenuItem Header="_Patch only" Click="ViewMenuItemChecked" x:Name="showPatch" ></MenuItem>
+				<MenuItem Header="_Report only" Click="ViewMenuItemChecked" x:Name="showReport"></MenuItem>
 			</MenuItem>
 
 			<!--
@@ -141,8 +160,11 @@
 			</MenuItem>
 			-->
 
-			<MenuItem Header="Help">
-				<MenuItem Header="About"></MenuItem>
+			<MenuItem Header="_Help">
+				<MenuItem Header="_About">
+					<MenuItem.Icon>
+						<Image Source="Images/Help.png"/>
+					</MenuItem.Icon></MenuItem>
 			</MenuItem>
 		</Menu>
 	</Grid>
