@@ -54,5 +54,11 @@ namespace AsmChecker
 			IEnumerable<string> types = new[] { "Type", "Struct", "Class", "Interface", "Enum" };
 			return source.Elements().Where(s => types.Contains(s.Name.LocalName));
 		}
+
+		public static IEnumerable<XElement> ExceptAccessorsAndParameters(this IEnumerable<XElement> source)
+		{
+			IEnumerable<string> filter = new[] { "Accessor", "Parameter" };
+			return source.Where(s => filter.Contains(s.Name.LocalName));
+		}
 	}
 }

@@ -14,6 +14,7 @@ namespace AsmChecker
 				fileList.Select(f => AssemblyDefinition.ReadAssembly(f)).Where(it => it != null);
 
 			XElement dumpXml = new XElement("CompatibilityInfo");
+			dumpXml.SetAttributeValue("Info", "Compatibility info dump");
 			foreach (AssemblyDefinition assembly in asmDefinitions)
 			{
 				XElement assemblyXml = DumpAssembly(assembly);
@@ -134,7 +135,7 @@ namespace AsmChecker
 
 		public static XElement DumpMethod(MethodDefinition method)
 		{
-			XElement methodXml = new XElement(method.IsGetter||method.IsSetter?"Accessor":"Method");
+			XElement methodXml = new XElement(method.IsGetter || method.IsSetter ? "Accessor" : "Method");
 			methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
@@ -165,11 +166,12 @@ namespace AsmChecker
 			//    source.SetAttributeValue(attribute.Name, attribute.Value);
 			//}
 
-			source.SetAttributeValue("Compatible",patch.GetValue("Compatible"));
+			source.SetAttributeValue("Compatible", patch.GetValue("Compatible"));
 
-			foreach (XElement element in source.Elements())
+			foreach (XElement element in source.Elements().ExceptAccessorsAndParameters())
 			{
-				ApplyPatch(element, patch.Elements(element.Name.LocalName).SingleOrDefault(e => Check.AreCompatible(element, e)));
+				ApplyPatch(element, patch.Elements(element.Name.LocalName).
+					ExceptAccessorsAndParameters().SingleOrDefault(e => Check.AreCompatible(element, e)));
 			}
 		}
 	}

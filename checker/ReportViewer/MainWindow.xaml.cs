@@ -3,10 +3,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
@@ -19,22 +15,23 @@ namespace AsmChecker.ReportViewer
 	public partial class MainWindow : Window
 	{
 		public bool DataChanged = false;
-		private List<XElement> elements;
+		public XElement DumpXml;
 
 		public MainWindow(XElement dump, XElement report, XElement patch)
 		{
 			InitializeComponent();
 			try
 			{
+				DumpXml = dump;
+
 				//variables setup
 				showDump.IsChecked = true;
 				showPatch.IsChecked = false;
 				showReport.IsChecked = false;
 
-				elements = new List<XElement> { dump, patch, report };
-				
-				//load tree content
-				LoadTree();
+				Dump.ApplyPatch(dump, report);
+				Dump.ApplyPatch(dump, patch);
+				treeView1.ItemsSource = new List<XElement> { dump };
 			}
 			catch (Exception e)
 			{
@@ -43,31 +40,22 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
-		private void LoadTree(bool updatePatchAndReport=false)
+		private void UpdateTree()
 		{
-			if (elements.Count > 0)
+			var oldsrc = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
+			treeView1.ItemsSource = new List<XElement> { DumpXml };
+			Dump.ApplyPatch((treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault(),oldsrc);
+			var t = (treeView1.ItemsSource as IEnumerable<XElement>).LastOrDefault();
+
+			if (showPatch.IsChecked)
 			{
-				if (updatePatchAndReport)
-				{
-					Dump.ApplyPatch(elements[0],elements[1]);
-					Dump.ApplyPatch(elements[0], elements[2]);
-					elements = elements.Take(1).ToList();
-					elements.Add(Report.GenerateReport(elements[0], true));
-					elements.Add(Report.GenerateReport(elements[0], false));
-				}
-
-				if (!showDump.IsChecked)
-				{
-					treeView1.ItemsSource = showPatch.IsChecked==true && showDump.IsChecked!=true? new List<XElement> {elements[1]} : new List<XElement> {elements[2]};
-				}
-				else
-				{
-					treeView1.ItemsSource = elements.Take(1);
-					Dump.ApplyPatch(elements[0], elements[1]);
-					Dump.ApplyPatch(elements[0], elements[2]);
-				}
-
+				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(t, true) };
 			}
+			else if (showReport.IsChecked)
+			{
+				treeView1.ItemsSource = new List<XElement> { Report.GenerateReport(t, false) };
+			}
+
 		}
 
 		private void treeView1_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
@@ -86,6 +74,22 @@ namespace AsmChecker.ReportViewer
 			{
 				infoPanel.Width = new GridLength(350);
 			}
+		}
+
+		private void MenuItem_Checked(object sender, RoutedEventArgs e)
+		{
+			showDump.IsChecked = false;
+			showReport.IsChecked = false;
+			showPatch.IsChecked = false;
+
+			MenuItem senderItem = (sender as MenuItem);
+			if (senderItem == null)
+			{
+				return;
+			}
+
+			senderItem.IsChecked = true;
+			UpdateTree();
 		}
 
 		#region Context menu and TreeView right click handling
@@ -136,18 +140,5 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 		#endregion
-
-		private void MenuItem_Checked(object sender, RoutedEventArgs e)
-		{
-			showDump.IsChecked = false;
-			showReport.IsChecked = false;
-			showPatch.IsChecked = false;
-
-			if(elements!=null)
-			{
-				(sender as MenuItem).IsChecked = true;
-				LoadTree(true);
-			}
-		}
 	}
 }

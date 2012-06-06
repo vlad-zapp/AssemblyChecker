@@ -165,16 +165,11 @@
 				<MenuItem Header="Dump and results" Click="MenuItem_Checked" x:Name="showDump"></MenuItem>
 				<MenuItem Header="Patch only" Click="MenuItem_Checked" x:Name="showPatch" ></MenuItem>
 				<MenuItem Header="Report only" Click="MenuItem_Checked" x:Name="showReport"></MenuItem>
-				<!--<RadioButton Content="Dump and results" Checked="MenuItem_Checked" x:Name="showDump"></RadioButton>
-				<RadioButton Content="Patch only" Click="MenuItem_Checked" x:Name="showPatch"></RadioButton>
-				<RadioButton Content="Report only" Click="MenuItem_Checked" x:Name="showReport"></RadioButton>-->
 			</MenuItem>
 
 			<MenuItem Header="Action">
-				<MenuItem Header="Dump from files"></MenuItem>
-				<MenuItem Header="Dump from directories"></MenuItem>
-				<MenuItem Header="Check files"></MenuItem>
-				<MenuItem Header="Check directories"></MenuItem>
+				<MenuItem Header="Dump"></MenuItem>
+				<MenuItem Header="Check"></MenuItem>
 				<MenuItem Header="Merge patch"></MenuItem>
 			</MenuItem>
 

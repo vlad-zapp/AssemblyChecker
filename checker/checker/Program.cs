@@ -93,7 +93,7 @@ namespace AsmChecker
 
 					Check.CheckAssemblies(storedAssemblies.Elements("Assembly"), assemblies.Elements("Assembly"));
 					XElement report = Report.GenerateReport(storedAssemblies);
-					report.Name = "CompaTibilityInfo";
+					report.Name = "CompatibilityInfo";
 					report.ProperSave(String.IsNullOrEmpty(reportFile) ? defaultReportFile : reportFile.Substring("report:".Length));
 
 					if (report.HasElements)
