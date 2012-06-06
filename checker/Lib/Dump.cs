@@ -160,26 +160,21 @@ namespace AsmChecker
 			if (patch == null)
 				return;
 
-			//not needed now
-			//foreach (XAttribute attribute in patch.Attributes())
-			//{
-			//    source.SetAttributeValue(attribute.Name, attribute.Value);
-			//}
-
 			source.SetAttributeValue("Compatible", patch.GetValue("Compatible"));
 
 			foreach (XElement element in source.Elements().ExceptAccessorsAndParameters())
 			{
-				var dbg = patch.Elements(element.Name.LocalName).
-					ExceptAccessorsAndParameters().Where(e => Check.AreCompatible(element, e));
-				try
-				{
-					ApplyPatch(element, patch.Elements(element.Name.LocalName).
-					                    	ExceptAccessorsAndParameters().SingleOrDefault(e => Check.AreCompatible(element, e)));
-				}
-				catch (Exception e)
-				{
-				}
+				ApplyPatch(element, patch.Elements(element.Name.LocalName).
+										ExceptAccessorsAndParameters().SingleOrDefault(e => Check.AreCompatible(element, e)));
+
+			}
+		}
+
+		public static void ClearPatches(XElement source)
+		{
+			foreach (XElement element in source.Descendants().Where(e => e.Attribute("Compatible") != null))
+			{
+				element.SetAttributeValue("Compatible",null);
 			}
 		}
 	}

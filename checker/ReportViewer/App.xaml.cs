@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Xml.Linq;
@@ -43,12 +39,14 @@ namespace AsmChecker.ReportViewer
 
 				if (win.DataChanged && MessageBox.Show("Save changes?","Something changed",MessageBoxButton.YesNo,MessageBoxImage.Question)==MessageBoxResult.Yes)
 				{
-					inputReport = Report.GenerateReport(inputDump, false);
+					inputReport = Report.GenerateReport(win.DumpXml, false);
 					inputReport.Name = "Report";
 
-					inputPatch = Report.GenerateReport(inputDump, true);
+					inputPatch = Report.GenerateReport(win.DumpXml, true);
 					inputPatch.Name = "Patch";
 
+					Dump.ClearPatches(win.DumpXml);
+					win.DumpXml.ProperSave(e.Args[0]);
 					inputReport.ProperSave(reportFile);
 					inputPatch.ProperSave(patchFile);
 				}
