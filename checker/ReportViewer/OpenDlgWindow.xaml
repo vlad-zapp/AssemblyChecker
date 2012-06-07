@@ -16,7 +16,7 @@
 		</Grid.RowDefinitions>
         
 		<TextBlock VerticalAlignment="Center" Text="Dump file" Grid.Row="0" Grid.Column="0"  Margin="5"></TextBlock>
-		<TextBox Name="dumpFile" TextChanged="TextBoxTextChanged" Width="Auto" Height="23" Grid.Row="0" Grid.Column="1" Margin="5"></TextBox>
+		<TextBox Name="dumpFile" TextChanged="DumpFileTextBoxChanged" Width="Auto" Height="23" Grid.Row="0" Grid.Column="1" Margin="5"></TextBox>
 		<Button Name="selectDumpFile" Grid.Row="0" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5" Click="selectDumpFile_Click"></Button>
 		
 		<TextBlock VerticalAlignment="Center" Text="Patch file" Grid.Row="1" Grid.Column="0"  Margin="5"></TextBlock>
@@ -26,9 +26,8 @@
 		<TextBlock VerticalAlignment="Center" Text="Report file" Grid.Row="2" Grid.Column="0"  Margin="5"></TextBlock>
 		<TextBox Name="reportFile" IsEnabled="False" Width="Auto" Height="23" Grid.Row="2" Grid.Column="1" Margin="5"></TextBox>
 		<Button Name="selectReportFile" IsEnabled="False" Grid.Row="2" Grid.Column="3" Content="..." Width="23" Height="23"  Margin="5" Click="selectReportFile_Click"></Button>
-		<CheckBox Content="Dump only" Grid.Row="3" Grid.Column="0" Margin="5,20,0,0"></CheckBox>
 		<StackPanel Grid.Column="1" Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0" Grid.ColumnSpan="2">
-			<Button Content="Open" Width="80" IsDefault="True" Margin="5" Click="ButtonClick"></Button>
+			<Button Content="Open" Width="80" IsDefault="True" Margin="5" Click="OkButtonClick"></Button>
 			<Button Content="Cancel" Width="80" IsCancel="True" Margin="5"></Button>
 		</StackPanel>
 		

@@ -105,7 +105,7 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
-		private void treeView1_MouseRightButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+		private void SelectItemByRmb(object sender, System.Windows.Input.MouseButtonEventArgs e)
 		{
 			if (sender is TreeViewItem)
 			{
@@ -118,7 +118,7 @@ namespace AsmChecker.ReportViewer
 
 		#region Context menu
 
-		private void IgnoreItemClick(object sender, RoutedEventArgs e)
+		private void Ignore(object sender, RoutedEventArgs e)
 		{
 			XElement item = (treeView1.SelectedItem as XElement);
 
@@ -130,7 +130,7 @@ namespace AsmChecker.ReportViewer
 			patchChanged = true;
 		}
 
-		private void DeleteItemClick(object sender, RoutedEventArgs e)
+		private void Delete(object sender, RoutedEventArgs e)
 		{
 			XElement item = (treeView1.SelectedItem as XElement);
 
@@ -149,7 +149,7 @@ namespace AsmChecker.ReportViewer
 			}
 		}
 
-		private void ItemContextMenuOpened(object sender, RoutedEventArgs e)
+		private void ContextMenuOpened(object sender, RoutedEventArgs e)
 		{
 			if (treeView1.SelectedItem == null)
 				return;
@@ -172,7 +172,7 @@ namespace AsmChecker.ReportViewer
 			patchFile = dialog.Patch;
 		}
 
-		private void ViewMenuItemChecked(object sender, RoutedEventArgs e)
+		private void ChngeView(object sender, RoutedEventArgs e)
 		{
 			showDump.IsChecked = false;
 			showReport.IsChecked = false;
@@ -189,7 +189,7 @@ namespace AsmChecker.ReportViewer
 			UpdateTree();
 		}
 
-		private void CloseProgram(object sender, RoutedEventArgs e)
+		private void Exit(object sender, RoutedEventArgs e)
 		{
 			App.Current.Shutdown();
 		}

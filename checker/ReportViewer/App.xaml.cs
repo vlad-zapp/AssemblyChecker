@@ -17,11 +17,11 @@ namespace AsmChecker.ReportViewer
 			MainWindow win;
 
 			//Start with commandline parameters
-			if (e.Args.Any() && e.Args[0].EndsWith(".xml"))
+			if (e.Args.Any() && e.Args.First().EndsWith(".xml"))
 			{
 				string fileName = Path.ChangeExtension(e.Args[0], null);
-				string reportFile = e.Args.Count() > 1 ? e.Args[1] : fileName + "-report.xml";
-				string patchFile = e.Args.Count() > 2 ? e.Args[2] : fileName + "-patch.xml";
+				string patchFile = e.Args.Count() > 1 ? e.Args[1] : fileName + "-patch.xml";
+				string reportFile = e.Args.Count() > 2 ? e.Args[2] : fileName + "-report.xml";
 				win = new MainWindow(e.Args[0], patchFile, reportFile);
 
 			}

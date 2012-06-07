@@ -21,7 +21,7 @@ namespace AsmChecker
 			InitializeComponent();
 		}
 
-		private void TextBoxTextChanged(object sender, TextChangedEventArgs e)
+		private void DumpFileTextBoxChanged(object sender, TextChangedEventArgs e)
 		{
 			if(File.Exists(dumpFile.Text))
 			{
@@ -52,7 +52,7 @@ namespace AsmChecker
 			}
 		}
 
-		private void ButtonClick(object sender, RoutedEventArgs e)
+		private void OkButtonClick(object sender, RoutedEventArgs e)
 		{
 			Dump = dumpFile.Text;
 			Report = reportFile.Text;
