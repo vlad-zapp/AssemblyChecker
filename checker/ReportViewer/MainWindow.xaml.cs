@@ -5,7 +5,6 @@ using System.Windows.Controls;
 using System.Xml.Linq;
 using System.Linq;
 using System.Collections.Generic;
-using Microsoft.Win32;
 
 namespace AsmChecker.ReportViewer
 {
@@ -230,6 +229,11 @@ namespace AsmChecker.ReportViewer
 		}
 
 		#endregion
+
+		private void About(object sender, RoutedEventArgs e)
+		{
+			MessageBox.Show("\n\tReport viewer 1.0\n\nIt is a part of Assembly checker program\nhttp://github.com/vlad-zapp/AssemblyChecker\n\n©2012 Vladislav Grutsenko\nvgrutsenko@mirantis.com","About",MessageBoxButton.OK,MessageBoxImage.Information);
+		}
 
 	}
 }
