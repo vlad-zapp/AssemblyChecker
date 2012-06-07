@@ -13,12 +13,8 @@ namespace AsmChecker.ReportViewer
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		public bool dumpChanged = false;
-		public bool patchChanged = false;
-		public bool reportChanged = false;
-
+		public bool dumpChanged, patchChanged, reportChanged;
 		private string dumpFile, reportFile, patchFile;
-
 		private XElement DumpXml;
 
 		public MainWindow(string dumpFile, string reportFile, string patchFile)
@@ -228,12 +224,12 @@ namespace AsmChecker.ReportViewer
 			SaveReport(sender, e);
 		}
 
-		#endregion
-
 		private void About(object sender, RoutedEventArgs e)
 		{
-			MessageBox.Show("\n\tReport viewer 1.0\n\nIt is a part of Assembly checker program\nhttp://github.com/vlad-zapp/AssemblyChecker\n\n©2012 Vladislav Grutsenko\nvgrutsenko@mirantis.com","About",MessageBoxButton.OK,MessageBoxImage.Information);
+			MessageBox.Show("\n\t      Report viewer 1.0\n\n   It is a part of AssemblyChecker program\n   http://github.com/vlad-zapp/AssemblyChecker\n\n\t©2012 Vladislav Grutsenko\n\tvgrutsenko@mirantis.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
 		}
+
+		#endregion
 
 	}
 }

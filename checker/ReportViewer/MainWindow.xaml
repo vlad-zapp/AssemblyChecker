@@ -72,7 +72,13 @@
 		<TreeView Margin="0,0,4,0" Grid.Column="0" Grid.Row="1" Name="treeView1" ItemTemplate="{Binding Source={StaticResource ViewEditTreeTemplate}}" MouseRightButtonDown="SelectItemByRmb" SelectedItemChanged="TreeViewSelectedItemChanged">
 			<TreeView.ItemContainerStyle>
 				<Style TargetType="TreeViewItem">
+					<Setter Property="IsExpanded" Value="False"></Setter>
 					<EventSetter Event="TreeViewItem.MouseRightButtonDown" Handler="SelectItemByRmb"/>
+					<Style.Triggers>
+						<DataTrigger Binding="{Binding ElementName=showDump, Path=IsChecked}" Value="False">
+							<Setter Property="IsExpanded" Value="True"></Setter>
+						</DataTrigger>
+					</Style.Triggers>
 				</Style>
 			</TreeView.ItemContainerStyle>
 

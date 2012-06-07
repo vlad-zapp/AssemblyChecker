@@ -14,7 +14,7 @@ namespace AsmChecker
 				fileList.Select(f => AssemblyDefinition.ReadAssembly(f)).Where(it => it != null);
 
 			XElement dumpXml = new XElement("CompatibilityInfo");
-			dumpXml.SetAttributeValue("Info", "Compatibility info dump");
+			dumpXml.SetAttributeValue("Name", "Compatibility info dump");
 			foreach (AssemblyDefinition assembly in asmDefinitions)
 			{
 				XElement assemblyXml = DumpAssembly(assembly);

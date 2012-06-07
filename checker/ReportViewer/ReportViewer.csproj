@@ -8,7 +8,7 @@
     <ProjectGuid>{6B2E4B70-D934-4776-82BA-A8A16CE48A0C}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AsmChecker</RootNamespace>
+    <RootNamespace>AsmChecker.ReportViewer</RootNamespace>
     <AssemblyName>ReportViewer</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
