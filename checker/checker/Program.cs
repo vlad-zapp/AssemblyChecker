@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -45,13 +46,13 @@ namespace AsmChecker
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				//TODO: improve detection of dirs
-				List<string> files = args.Where(a => a.ToLowerInvariant().EndsWith(".dll") || a.ToLowerInvariant().EndsWith(".exe")).ToList();
-				IEnumerable<string> dirs = args.Where(a => a == "." || a.EndsWith(@"\") /*|| a.IndexOf('\\') > a.IndexOf('.')*/);
-				string xmlSrc = args.FirstOrDefault(a => a.ToLowerInvariant().EndsWith(".xml")) ?? "prototypes.xml";
+				IEnumerable<string> dirs = args.Where(d=>Directory.Exists(d.StartsWith("-r",true,CultureInfo.InvariantCulture)?d.Substring(2):d));
+				List<string> files = args.Where(a => (a.EndsWith(".dll",true,CultureInfo.InvariantCulture) || a.EndsWith(".exe",true,CultureInfo.InvariantCulture)) && File.Exists(a)).ToList();
+				string xmlSrc = args.FirstOrDefault(a => a.EndsWith(".xml",true,CultureInfo.InvariantCulture)) ?? "prototypes.xml";
 
 				foreach (string dir in dirs)
 				{
-					bool recursive = dir.ToLowerInvariant().StartsWith("-r");
+					bool recursive = dir.StartsWith("-r", true, CultureInfo.InvariantCulture);
 					string dirPath = Path.GetFullPath(recursive ? dir.Substring(2) : dir);
 					files.AddRange(Directory.GetFiles(dirPath, "*.dll", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));
 					files.AddRange(Directory.GetFiles(dirPath, "*.exe", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly));

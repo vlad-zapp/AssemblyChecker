@@ -32,6 +32,12 @@ namespace AsmChecker
 		public static void ProperSave(this XElement source, string filename)
 		{
 			string fullFileName = Path.GetFullPath(filename);
+			string path = Path.GetDirectoryName(fullFileName);
+			if(!Directory.Exists(path))
+			{
+				Directory.CreateDirectory(path);
+			}
+
 			using (XmlWriter writer = XmlWriter.Create(
 					fullFileName, new XmlWriterSettings() { Indent = true, IndentChars = "\t" }))
 			{
