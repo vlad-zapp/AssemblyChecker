@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Mono.Cecil;
@@ -10,14 +11,12 @@ namespace AsmChecker
 	{
 		public static XElement MakeDumps(IEnumerable<string> fileList)
 		{
-			IEnumerable<AssemblyDefinition> asmDefinitions =
-				fileList.Select(f => AssemblyDefinition.ReadAssembly(f)).Where(it => it != null);
-
 			XElement dumpXml = new XElement("CompatibilityInfo");
 			dumpXml.SetAttributeValue("Name", "Compatibility info dump");
-			foreach (AssemblyDefinition assembly in asmDefinitions)
+
+			foreach (string assemblyFile in fileList)
 			{
-				XElement assemblyXml = DumpAssembly(assembly);
+				XElement assemblyXml = DumpAssembly(assemblyFile);
 				if (assemblyXml.HasElements)
 					dumpXml.Add(assemblyXml);
 			}
@@ -25,15 +24,24 @@ namespace AsmChecker
 			return dumpXml;
 		}
 
-		public static XElement DumpAssembly(AssemblyDefinition source)
+		public static XElement DumpAssembly(string assemblyFile)
 		{
-			IEnumerable<TypeDefinition> sourceTypes;
-
+			AssemblyDefinition source = AssemblyDefinition.ReadAssembly(assemblyFile);
+			
+			if (source == null)
+			{
+				return null;
+			}
+			
+			List<TypeDefinition> sourceTypes;
+			
 			try
 			{
-				sourceTypes = source.Modules.SelectMany(m => m.Types).Where(t => t.IsPublic);
+				sourceTypes = source.Modules.SelectMany(m => m.Types).Where(t => t.IsPublic).ToList();
+				(source.MainModule.AssemblyResolver as DefaultAssemblyResolver).AddSearchDirectory(Path.GetDirectoryName(assemblyFile));
+				sourceTypes.AddRange(source.Modules.SelectMany(m => m.ExportedTypes).Select(r => r.Resolve()).Where(t => t.IsPublic));
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
 				//we don't care about broken or empty files
 				return null;
