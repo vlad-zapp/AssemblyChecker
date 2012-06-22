@@ -17,8 +17,10 @@ namespace AsmChecker
 			foreach (string assemblyFile in fileList)
 			{
 				XElement assemblyXml = DumpAssembly(assemblyFile);
-				if (assemblyXml.HasElements)
+				if (assemblyXml != null && assemblyXml.HasElements)
+				{
 					dumpXml.Add(assemblyXml);
+				}
 			}
 
 			return dumpXml;
@@ -41,7 +43,7 @@ namespace AsmChecker
 				(source.MainModule.AssemblyResolver as DefaultAssemblyResolver).AddSearchDirectory(Path.GetDirectoryName(assemblyFile));
 				sourceTypes.AddRange(source.Modules.SelectMany(m => m.ExportedTypes).Select(r => r.Resolve()).Where(t => t.IsPublic));
 			}
-			catch (Exception e)
+			catch (Exception)
 			{
 				//we don't care about broken or empty files
 				return null;
