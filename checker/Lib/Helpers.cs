@@ -18,7 +18,7 @@ namespace AsmChecker
 		public static string GenericsToString(this IGenericParameterProvider self)
 		{
 			IEnumerable<string> genericsNames = self.GenericParameters.Select(m => m.Name);
-			return genericsNames.Count() > 0 ? ("`" + String.Join(",", genericsNames)) : String.Empty;
+			return genericsNames.Count() > 0 ? (@"<" + String.Join(",", genericsNames) + @">") : String.Empty;
 		}
 
 		public static string CorrectName(this TypeReference self, bool fullName = false)

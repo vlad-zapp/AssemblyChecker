@@ -70,10 +70,10 @@ namespace AsmChecker
 				typeType = "Interface";
 			else if (type.IsEnum)
 				typeType = "Enum";
-			else if (type.IsClass)
-				typeType = "Class";
 			else if (type.IsValueType)
 				typeType = "Struct";
+			else if (type.IsClass)
+				typeType = "Class";
 			else
 				typeType = "Type";
 
@@ -124,11 +124,11 @@ namespace AsmChecker
 				propertyXml.SetAttributeValue("Name", property.Name);
 				propertyXml.SetAttributeValue("Type", property.PropertyType);
 
-				if (property.GetMethod != null)
+				if (property.GetMethod != null && property.GetMethod.IsPublic)
 				{
 					propertyXml.Add(DumpMethod(property.GetMethod));
 				}
-				if (property.SetMethod != null)
+				if (property.SetMethod != null && property.SetMethod.IsPublic)
 				{
 					propertyXml.Add(DumpMethod(property.SetMethod));
 				}
@@ -136,7 +136,7 @@ namespace AsmChecker
 			}
 
 			//adding nested types
-			foreach (TypeDefinition nestedType in type.NestedTypes.Where(m => m.IsPublic))
+			foreach (TypeDefinition nestedType in type.NestedTypes.Where(m => m.IsNestedPublic))
 			{
 				typeXml.Add(DumpType(nestedType));
 			}

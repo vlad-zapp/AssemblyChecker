@@ -37,7 +37,9 @@
     <Reference Include="Mono.Cecil">
       <HintPath>..\..\packages\Mono.Cecil.0.9.5.3\lib\net40\Mono.Cecil.dll</HintPath>
     </Reference>
-    <Reference Include="nunit.framework, Version=2.5.10.11092, Culture=neutral, PublicKeyToken=96d09a1eb7f44a77, processorArchitecture=MSIL" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\..\packages\NUnit.2.6.0.12054\lib\nunit.framework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -47,18 +49,29 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Tests.cs" />
+    <Compile Include="CheckTests.cs" />
+    <Compile Include="HelpersTests.cs" />
+    <Compile Include="DumpTests.cs" />
+    <Compile Include="MixedTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReportTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\TestAssembly1\TestAssembly1.csproj">
+    <ProjectReference Include="..\..\Checker\AsmChecker.csproj">
+      <Project>{773AA822-C252-498A-9CAE-2B527F8CD0ED}</Project>
+      <Name>AsmChecker</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\ReportViewer\ReportViewer.csproj">
+      <Project>{6B2E4B70-D934-4776-82BA-A8A16CE48A0C}</Project>
+      <Name>ReportViewer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestAssembly1\TestAsm.csproj">
       <Project>{6223F555-2663-432D-B1F8-E6A128BA5E25}</Project>
-      <Name>TestAssembly1</Name>
+      <Name>TestAsm</Name>
     </ProjectReference>
-    <ProjectReference Include="..\TestAssembly2\TestAssembly2.csproj">
-      <Project>{126E823B-867B-4715-8CA3-4AF211273AC6}</Project>
-      <Name>TestAssembly2</Name>
-    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

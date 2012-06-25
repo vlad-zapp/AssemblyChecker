@@ -8,8 +8,8 @@
     <ProjectGuid>{6223F555-2663-432D-B1F8-E6A128BA5E25}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestAssembly1</RootNamespace>
-    <AssemblyName>TestAssembly1</AssemblyName>
+    <RootNamespace>TestAsm</RootNamespace>
+    <AssemblyName>TestAsm</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
