@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
+using Mono.Cecil;
 
 namespace AsmChecker
 {
@@ -46,9 +48,9 @@ namespace AsmChecker
 			if (args.Length > 0 && (args[0].ToLowerInvariant() == "-dump" || args[0].ToLowerInvariant() == "-check"))
 			{
 				//TODO: improve detection of dirs
-				IEnumerable<string> dirs = args.Where(d=>Directory.Exists(d.StartsWith("-r",true,CultureInfo.InvariantCulture)?d.Substring(2):d));
-				List<string> files = args.Where(a => (a.EndsWith(".dll",true,CultureInfo.InvariantCulture) || a.EndsWith(".exe",true,CultureInfo.InvariantCulture)) && File.Exists(a)).ToList();
-				string xmlSrc = args.FirstOrDefault(a => a.EndsWith(".xml",true,CultureInfo.InvariantCulture)) ?? "prototypes.xml";
+				IEnumerable<string> dirs = args.Where(d => Directory.Exists(d.StartsWith("-r", true, CultureInfo.InvariantCulture) ? d.Substring(2) : d));
+				List<string> files = args.Where(a => (a.EndsWith(".dll", true, CultureInfo.InvariantCulture) || a.EndsWith(".exe", true, CultureInfo.InvariantCulture)) && File.Exists(a)).ToList();
+				string xmlSrc = args.FirstOrDefault(a => a.EndsWith(".xml", true, CultureInfo.InvariantCulture)) ?? "prototypes.xml";
 
 				foreach (string dir in dirs)
 				{
@@ -102,18 +104,73 @@ namespace AsmChecker
 						Console.WriteLine("Compatibility test failed!");
 						Console.WriteLine("Problems are:");
 						Console.WriteLine(report);
+					}
+
+					bool policyProblems = false;
+					if (!args.Any(a => a == "-skipPolicy"))
+					{
+						foreach (string file in files)
+						{
+							AssemblyDefinition asm = AssemblyDefinition.ReadAssembly(file);
+							string asmModule = Path.GetFileNameWithoutExtension(asm.MainModule.Name);
+							IEnumerable<string> policyFiles = Directory.GetFiles(Path.GetDirectoryName(file), String.Format("Policy.?.?.{0}.config", asmModule), SearchOption.TopDirectoryOnly);
+
+							foreach (string policyFile in policyFiles)
+							{
+								XElement policyXml = XElement.Load(policyFile);
+								try
+								{
+									XElement dependencyAssembly =
+										policyXml.Element("runtime").Elements().FirstOrDefault(e => e.Name.LocalName == "assemblyBinding").Elements().FirstOrDefault(e => e.Name.LocalName == "dependentAssembly");
+									XElement asmIdentity = dependencyAssembly.Element(dependencyAssembly.Name.Namespace + "assemblyIdentity");
+									XElement bindingRedirect = dependencyAssembly.Element(dependencyAssembly.Name.Namespace + "bindingRedirect");
+
+									string correctName = asmModule;
+									string correctPublicKeyToken = asm.FullName.Split(',')[3].Split('=')[1];
+									string correctCulture = asm.FullName.Split(',')[2].Split('=')[1];
+									string correctNewVersion = asm.FullName.Split(',')[1].Split('=')[1];
+
+									policyProblems = policyProblems |
+										checkPolicyAttribute(asmIdentity.Attribute("name"), correctName, policyFile) |
+										checkPolicyAttribute(asmIdentity.Attribute("publicKeyToken"), correctPublicKeyToken, policyFile) |
+										checkPolicyAttribute(asmIdentity.Attribute("culture"), correctCulture, policyFile) |
+										checkPolicyAttribute(bindingRedirect.Attribute("newVersion"), correctNewVersion, policyFile);
+								}
+								catch (Exception ex)
+								{
+									policyProblems = true;
+									Console.WriteLine(String.Format("Can't parse policy file: {0}", policyFile));
+								}
+							}
+						}
+					}
+
+					if (report.HasElements || policyProblems)
+					{
 						return 1;
 					}
-					else
-					{
-						Console.WriteLine("Compatibility test passed!");
-						return 0;
-					}
+
+					Console.WriteLine("Compatibility test passed!");
+					return 0;
 				}
 			}
 
 			Usage();
 			return -1;
+		}
+
+		private static bool checkPolicyAttribute(XAttribute src, string expectedValue, string policyFile)
+		{
+			if (src.Value != expectedValue)
+			{
+				Console.WriteLine(String.Format("Wrong {0} '{1}'\n in {2} in file: {3}", src.Name.LocalName, src.Value, src.Parent.Name.LocalName, policyFile));
+				Console.WriteLine(String.Format("Should be: {0}", expectedValue));
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 }
