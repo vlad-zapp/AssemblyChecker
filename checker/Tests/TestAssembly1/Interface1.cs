@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace TestAssembly2
+namespace TestAsm
 {
-	public class Class1
+	public interface Interface1
 	{
 	}
 }

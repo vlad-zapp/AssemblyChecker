@@ -50,7 +50,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CheckTests.cs" />
-    <Compile Include="HelpersTests.cs" />
     <Compile Include="DumpTests.cs" />
     <Compile Include="MixedTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

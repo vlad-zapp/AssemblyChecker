@@ -2,13 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NUnit.Framework;
 
-namespace Tests
+namespace TestAsm
 {
-	[TestFixture]
-	public class HelpersTests
+	public class AbstractClass1
 	{
-
+		public void Hello()
+		{
+		}
 	}
 }

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Xml.Linq;
 using AsmChecker;
 using Mono.Cecil;
@@ -42,6 +39,29 @@ namespace Tests
 			Assert.That(Check.AreCompatible(dump1,dump2));
 			Assert.That(Check.AreCompatible(dump1,dump));
 			Assert.That(Check.AreCompatible(dump2,dump));
+		}
+
+		[Test]
+		public void ApplySimplePatchTest()
+		{
+			Assert.That(dump.Element("Assembly").Attribute("Compatible") == null);
+			XElement patch = XElement.Parse("<dump><Assembly Name='TestAsm' Compatible='True'/></dump>");
+			Dump.ApplyPatch(dump,patch);
+			Assert.That(dump.Element("Assembly").Attribute("Compatible").Value=="true");
+		}
+
+		[Test]
+		public void ApplyCompletePatchTest()
+		{
+			XElement patch = new XElement(dump);
+
+			foreach (XElement element in patch.Descendants().Where(d=>d.Name.LocalName!="Parameter"))
+			{
+				element.SetAttributeValue("Compatible","true");
+			}
+
+			Dump.ApplyPatch(dump,patch);
+			Assert.That(patch.Descendants().Where(d => d.Name.LocalName != "Parameter").All(d=>d.GetValue("Compatible")=="true"));
 		}
 	}
 }
