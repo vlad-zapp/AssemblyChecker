@@ -65,7 +65,7 @@ namespace AsmChecker
 					Usage();
 				}
 
-				XElement assemblies = Dump.MakeDumps(files);
+				XElement assemblies = Dump.MakeDumps(files, args[0].ToLowerInvariant() == "-check");
 
 				if (args[0].ToLowerInvariant() == "-dump")
 				{

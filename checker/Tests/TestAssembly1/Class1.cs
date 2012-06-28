@@ -6,7 +6,17 @@ using System.Text;
 namespace TestAssembly1
 {
 	public class Class1
-	{ 
+	{
+		public override bool Equals(object obj)
+		{
+			return false;
+		}
+
+		public int GetHashCode()
+		{
+			return base.GetHashCode();
+		}
+
 		public int testMethod1(int a, string b)
 		{
 			return 0;

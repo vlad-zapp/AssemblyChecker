@@ -70,10 +70,6 @@ namespace AsmChecker
 				first.GetValue("Type") == second.GetValue("Type") &&
 				//methods: check return type
 				first.GetValue("ReturnType") == second.GetValue("ReturnType") &&
-				//methods: virtual or not
-				first.GetValue("Virtual") == second.GetValue("Virtual") &&
-				//methods: override
-				first.GetValue("Override") == second.GetValue("Override") &&
 				//enums: check value
 				first.GetValue("Value") == second.GetValue("Value") &&
 				//methods: check parameters		

@@ -5,11 +5,11 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>8.0.30703</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{6223F555-2663-432D-B1F8-E6A128BA5E25}</ProjectGuid>
+    <ProjectGuid>{4BE546D8-9921-4A09-8ADB-8380531A6A88}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>TestAsm</RootNamespace>
-    <AssemblyName>TestAsm</AssemblyName>
+    <RootNamespace>TestAsm2</RootNamespace>
+    <AssemblyName>TestAsm2</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,18 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbstractClass1.cs" />
-    <Compile Include="Class1.cs" />
-    <Compile Include="Class2.cs" />
-    <Compile Include="Interface1.cs" />
+    <Compile Include="Asm2Class1.cs" />
+    <Compile Include="CustomType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\TestAsm2\TestAsm2.csproj">
-      <Project>{4BE546D8-9921-4A09-8ADB-8380531A6A88}</Project>
-      <Name>TestAsm2</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\TestAsm3\TestAsm3.csproj">
+    <ProjectReference Include="..\TestAsm3\TestAsm3.csproj">
       <Project>{2CC25F89-08A3-45CB-858E-4306BC143068}</Project>
       <Name>TestAsm3</Name>
     </ProjectReference>

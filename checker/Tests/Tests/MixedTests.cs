@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 using AsmChecker;
 using Mono.Cecil;
@@ -62,6 +64,17 @@ namespace Tests
 
 			Dump.ApplyPatch(dump,patch);
 			Assert.That(patch.Descendants().Where(d => d.Name.LocalName != "Parameter").All(d=>d.GetValue("Compatible")=="true"));
+		}
+
+		[Test]
+		public void CheckMemebersFromBaseType()
+		{
+			IEnumerable<XElement> dump = Dump.MakeDumps(new[] { "testasm.dll" }, true).Element("Assembly").Elements("Class").SingleOrDefault(c => c.GetValue("Name")== "class2").Elements();
+			IEnumerable<XElement> dump2 = Dump.MakeDumps(new[] { "testasm2.dll" }, true).Element("Assembly").Elements("Class").SingleOrDefault(c => c.GetValue("Name") == "asm2class1").Elements();
+			IEnumerable<XElement> dump3 = Dump.MakeDumps(new[] { "testasm3.dll" }, true).Element("Assembly").Elements("Class").SingleOrDefault(c => c.GetValue("Name") == "asm3class1").Elements();
+
+			Assert.That(dump2.All(e=>dump.Any(a=>Check.AreCompatible(a,e))));
+			Assert.That(dump3.All(e=>dump.Any(a => Check.AreCompatible(a,e))));
 		}
 	}
 }

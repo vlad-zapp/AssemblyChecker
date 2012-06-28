@@ -9,14 +9,14 @@ namespace AsmChecker
 {
 	public static class Dump
 	{
-		public static XElement MakeDumps(IEnumerable<string> fileList)
+		public static XElement MakeDumps(IEnumerable<string> fileList, bool includeParentMemebers=false)
 		{
 			XElement dumpXml = new XElement("CompatibilityInfo");
 			dumpXml.SetAttributeValue("Name", "Compatibility info dump");
 
 			foreach (string assemblyFile in fileList)
 			{
-				XElement assemblyXml = DumpAssembly(assemblyFile);
+				XElement assemblyXml = DumpAssembly(assemblyFile,includeParentMemebers);
 				if (assemblyXml != null && assemblyXml.HasElements)
 				{
 					dumpXml.Add(assemblyXml);
@@ -26,7 +26,7 @@ namespace AsmChecker
 			return dumpXml;
 		}
 
-		public static XElement DumpAssembly(string assemblyFile)
+		public static XElement DumpAssembly(string assemblyFile, bool includeParentMemebers=false)
 		{
 			AssemblyDefinition source = AssemblyDefinition.ReadAssembly(assemblyFile);
 			
@@ -56,13 +56,13 @@ namespace AsmChecker
 
 			foreach (TypeDefinition typeDefinition in sourceTypes)
 			{
-				asmXml.Add(DumpType(typeDefinition));
+				asmXml.Add(DumpType(typeDefinition, includeParentMemebers));
 			}
 
 			return asmXml;
 		}
 
-		public static XElement DumpType(TypeDefinition type)
+		public static XElement DumpType(TypeDefinition type, bool dumpParents=false)
 		{
 			string typeType;
 
@@ -79,7 +79,6 @@ namespace AsmChecker
 
 			XElement typeXml = new XElement(typeType);
 			typeXml.SetAttributeValue("Name", type.CorrectName());
-
 
 			if (type.IsClass && type.IsSealed && type.IsAbstract)
 			{
@@ -140,6 +139,20 @@ namespace AsmChecker
 			{
 				typeXml.Add(DumpType(nestedType));
 			}
+
+			//adding members from parent types
+			if(dumpParents && type.BaseType!=null)
+			{
+				XElement parentXml = DumpType(type.BaseType.Resolve(),true);
+				foreach (XElement element in parentXml.Elements())
+				{
+					if(typeXml.Elements().All(e=>!Check.AreCompatible(e,element)))
+					{
+						typeXml.Add(element);
+					}
+				}
+			}
+
 			return typeXml;
 		}
 
@@ -149,8 +162,10 @@ namespace AsmChecker
 			methodXml.SetAttributeValue("Name", method.Name + method.GenericsToString());
 			methodXml.SetAttributeValue("ReturnType", method.ReturnType);
 			methodXml.SetAttributeValue("Static", method.IsStatic ? "true" : null);
+#if DEBUG
 			methodXml.SetAttributeValue("Virtual", method.IsVirtual ? "true" : null);
 			methodXml.SetAttributeValue("Override", method.IsVirtual && !method.IsNewSlot ? "true" : null);
+#endif
 
 			if (method.HasParameters)
 			{
